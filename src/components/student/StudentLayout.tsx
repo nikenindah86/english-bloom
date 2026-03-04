@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Home, FileText, ClipboardList, Star } from "lucide-react";
+import { BookOpen, LogOut, Home, FileText, ClipboardList, Star, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { label: "Materials", icon: FileText, path: "/student/materials" },
   { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes" },
   { label: "Grades", icon: Star, path: "/student/grades" },
+  { label: "Profile", icon: User, path: "/student/profile" },
 ];
 
 const StudentLayout = ({ children }: { children: React.ReactNode }) => {
