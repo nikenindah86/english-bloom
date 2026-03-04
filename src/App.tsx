@@ -14,6 +14,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminStudents from "./pages/AdminStudents";
 import AdminMaterials from "./pages/AdminMaterials";
 import AdminQuizzes from "./pages/AdminQuizzes";
+import AdminGrading from "./pages/AdminGrading";
+import AdminAttendance from "./pages/AdminAttendance";
 import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -61,6 +63,22 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="teacher">
                   <AdminQuizzes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/grading"
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AdminGrading />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/attendance"
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AdminAttendance />
                 </ProtectedRoute>
               }
             />
