@@ -37,6 +37,7 @@ export type Database = {
       }
       attendance: {
         Row: {
+          class_id: string | null
           created_at: string
           date: string
           id: string
@@ -44,6 +45,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          class_id?: string | null
           created_at?: string
           date?: string
           id?: string
@@ -51,11 +53,41 @@ export type Database = {
           student_id: string
         }
         Update: {
+          class_id?: string | null
           created_at?: string
           date?: string
           id?: string
           status?: string
           student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          class_name: string
+          created_at: string
+          description: string | null
+          id: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          description?: string | null
+          id?: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          description?: string | null
+          id?: string
         }
         Relationships: []
       }
@@ -88,27 +120,56 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          class_id: string | null
           created_at: string
+          date_of_birth: string | null
           full_name: string | null
+          gender: string | null
           id: string
+          parent_name: string | null
+          phone: string | null
+          place_of_birth: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          class_id?: string | null
           created_at?: string
+          date_of_birth?: string | null
           full_name?: string | null
+          gender?: string | null
           id: string
+          parent_name?: string | null
+          phone?: string | null
+          place_of_birth?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          class_id?: string | null
           created_at?: string
+          date_of_birth?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          parent_name?: string | null
+          phone?: string | null
+          place_of_birth?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_questions: {
         Row: {
