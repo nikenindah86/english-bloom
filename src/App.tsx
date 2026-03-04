@@ -21,6 +21,8 @@ import StudentMaterials from "./pages/StudentMaterials";
 import StudentQuizzes from "./pages/StudentQuizzes";
 import StudentQuiz from "./pages/StudentQuiz";
 import StudentGrades from "./pages/StudentGrades";
+import StudentProfile from "./pages/StudentProfile";
+import AdminClasses from "./pages/AdminClasses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,11 +46,13 @@ const App = () => (
             <Route path="/admin/quizzes" element={<ProtectedRoute requiredRole="teacher"><AdminQuizzes /></ProtectedRoute>} />
             <Route path="/admin/grading" element={<ProtectedRoute requiredRole="teacher"><AdminGrading /></ProtectedRoute>} />
             <Route path="/admin/attendance" element={<ProtectedRoute requiredRole="teacher"><AdminAttendance /></ProtectedRoute>} />
+            <Route path="/admin/classes" element={<ProtectedRoute requiredRole="teacher"><AdminClasses /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/materials" element={<ProtectedRoute requiredRole="student"><StudentMaterials /></ProtectedRoute>} />
             <Route path="/student/quizzes" element={<ProtectedRoute requiredRole="student"><StudentQuizzes /></ProtectedRoute>} />
             <Route path="/student/quiz/:id" element={<ProtectedRoute requiredRole="student"><StudentQuiz /></ProtectedRoute>} />
             <Route path="/student/grades" element={<ProtectedRoute requiredRole="student"><StudentGrades /></ProtectedRoute>} />
+            <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
