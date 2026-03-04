@@ -1,27 +1,20 @@
 
 
-## Problem
+## Issue
 
-The screenshot shows a **404 "Page not found"** error on your Netlify deployment (`mrsnikenspace.netlify.app/student`). This happens because Netlify doesn't know how to handle client-side routing -- when you refresh a page like `/student`, Netlify looks for a real file at that path instead of serving your React app's `index.html`.
+The code already has all 5 nav items (Home, Materials, Quizzes, Grades, Profile) and the `/student/profile` route. The screenshot shows only 4 tabs — this is likely because:
 
-This is a classic Single Page Application (SPA) deployment issue, not a bug in your code.
+1. The preview/deployment is stale and hasn't picked up the latest code, OR
+2. The 5th tab is being pushed off-screen on narrow mobile viewports (each tab has `min-w-[56px]`, so 5 tabs = 280px minimum)
 
-## Solution
+## Plan
 
-Create a `public/_redirects` file that tells Netlify to route all requests to `index.html`, letting React Router handle the routing.
+To ensure the Profile tab is always visible, I will make a small tweak to `StudentLayout.tsx`:
 
-**File to create:** `public/_redirects`
-```
-/*    /index.html   200
-```
+1. **Reduce `min-w` on nav items** from `56px` to `48px` so all 5 tabs comfortably fit on narrow screens
+2. **Reduce icon/text size slightly** for better fit on small devices
 
-That single line fixes all refresh/deep-link 404s on Netlify.
+This is a single-file, single-line change to `src/components/student/StudentLayout.tsx`.
 
-## What changes
-
-| File | Action |
-|------|--------|
-| `public/_redirects` | Create -- single redirect rule for SPA routing |
-
-No database or component changes needed.
+No database or routing changes needed — everything is already wired up correctly.
 
