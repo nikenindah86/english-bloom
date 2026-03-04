@@ -24,11 +24,11 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
-          <Button asChild className="flex-1" size="lg">
+        <div className="flex flex-col gap-4 w-full mt-2">
+          <Button asChild className="h-14 text-lg rounded-xl" size="lg">
             <Link to="/login">Sign In</Link>
           </Button>
-          <Button asChild variant="outline" className="flex-1" size="lg">
+          <Button asChild variant="outline" className="h-14 text-lg rounded-xl" size="lg">
             <Link to="/register">Create Account</Link>
           </Button>
         </div>
