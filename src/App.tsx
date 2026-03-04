@@ -17,6 +17,10 @@ import AdminQuizzes from "./pages/AdminQuizzes";
 import AdminGrading from "./pages/AdminGrading";
 import AdminAttendance from "./pages/AdminAttendance";
 import StudentDashboard from "./pages/StudentDashboard";
+import StudentMaterials from "./pages/StudentMaterials";
+import StudentQuizzes from "./pages/StudentQuizzes";
+import StudentQuiz from "./pages/StudentQuiz";
+import StudentGrades from "./pages/StudentGrades";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,62 +38,17 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/students"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminStudents />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/materials"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminMaterials />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/quizzes"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminQuizzes />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/grading"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminGrading />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/attendance"
-              element={
-                <ProtectedRoute requiredRole="teacher">
-                  <AdminAttendance />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute requiredRole="student">
-                  <StudentDashboard />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/admin" element={<ProtectedRoute requiredRole="teacher"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/students" element={<ProtectedRoute requiredRole="teacher"><AdminStudents /></ProtectedRoute>} />
+            <Route path="/admin/materials" element={<ProtectedRoute requiredRole="teacher"><AdminMaterials /></ProtectedRoute>} />
+            <Route path="/admin/quizzes" element={<ProtectedRoute requiredRole="teacher"><AdminQuizzes /></ProtectedRoute>} />
+            <Route path="/admin/grading" element={<ProtectedRoute requiredRole="teacher"><AdminGrading /></ProtectedRoute>} />
+            <Route path="/admin/attendance" element={<ProtectedRoute requiredRole="teacher"><AdminAttendance /></ProtectedRoute>} />
+            <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
+            <Route path="/student/materials" element={<ProtectedRoute requiredRole="student"><StudentMaterials /></ProtectedRoute>} />
+            <Route path="/student/quizzes" element={<ProtectedRoute requiredRole="student"><StudentQuizzes /></ProtectedRoute>} />
+            <Route path="/student/quiz/:id" element={<ProtectedRoute requiredRole="student"><StudentQuiz /></ProtectedRoute>} />
+            <Route path="/student/grades" element={<ProtectedRoute requiredRole="student"><StudentGrades /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
