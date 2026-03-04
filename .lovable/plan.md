@@ -1,15 +1,14 @@
 
 
-## Fix: Index Page Shows Blank Placeholder
+## Fix: Index Page Still Showing Placeholder
 
-The root route (`/`) renders the default "Welcome to Your Blank App" page. It should redirect based on auth state:
+The previous edit to `Index.tsx` was not applied — it still contains the "Welcome to Your Blank App" fallback. The file needs to be updated.
 
 ### Changes
 
-**`src/pages/Index.tsx`** — Replace with a redirect component:
-- If loading, show the themed spinner
-- If authenticated, redirect to `/admin` or `/student` based on role
-- If not authenticated, redirect to `/login`
-
-This uses `useAuth()` from AuthContext and `Navigate` from react-router-dom. No other files need changes.
+**`src/pages/Index.tsx`** — Replace with a branded public landing page:
+- Hero section with the app name ("English Teacher LMS" or similar), tagline, and decorative blush/lavender background blobs
+- Two CTA buttons: "Sign In" → `/login`, "Create Account" → `/register`
+- Themed with the existing feminine pastel design system (glassmorphism card, BookOpen icon, rounded corners)
+- No auth logic needed since the user chose a public landing page
 
