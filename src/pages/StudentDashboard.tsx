@@ -4,8 +4,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
-import { Megaphone, ClipboardList, Sparkles } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal } from "lucide-react";
 import { format } from "date-fns";
+
+type LeaderEntry = {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  value: number;
+};
+
+const MEDAL_COLORS = [
+  "text-yellow-500", // gold
+  "text-gray-400",   // silver
+  "text-rose-400",   // rose-gold
+];
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -15,18 +29,23 @@ const StudentDashboard = () => {
   const [avgScore, setAvgScore] = useState<number | null>(null);
   const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [classId, setClassId] = useState<string | null>(null);
+  const [scoreBoard, setScoreBoard] = useState<LeaderEntry[]>([]);
+  const [attendBoard, setAttendBoard] = useState<LeaderEntry[]>([]);
+  const [leaderLoading, setLeaderLoading] = useState(true);
 
+  // Load dashboard basics
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [annRes, quizRes, subRes] = await Promise.all([
+      const [annRes, quizRes, subRes, profileRes] = await Promise.all([
         supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(3),
         supabase.from("quizzes").select("*").eq("is_active", true),
         supabase.from("quiz_submissions").select("quiz_id, score, status").eq("student_id", user.id),
+        supabase.from("profiles").select("class_id").eq("id", user.id).single(),
       ]);
 
       setAnnouncements(annRes.data || []);
-
       const submittedIds = new Set((subRes.data || []).map((s) => s.quiz_id));
       setPendingQuizzes((quizRes.data || []).filter((q) => !submittedIds.has(q.id)));
 
@@ -36,10 +55,90 @@ const StudentDashboard = () => {
         const avg = graded.reduce((sum, s) => sum + Number(s.score), 0) / graded.length;
         setAvgScore(Math.round(avg));
       }
+
+      const cid = profileRes.data?.class_id || null;
+      setClassId(cid);
       setLoading(false);
     };
     load();
   }, [user]);
+
+  // Load leaderboards when classId is known
+  useEffect(() => {
+    if (!classId) {
+      setLeaderLoading(false);
+      return;
+    }
+    const loadLeaderboards = async () => {
+      setLeaderLoading(true);
+
+      // Get classmates
+      const { data: classmates } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url")
+        .eq("class_id", classId);
+
+      if (!classmates || classmates.length === 0) {
+        setLeaderLoading(false);
+        return;
+      }
+
+      const ids = classmates.map((c) => c.id);
+      const profileMap = Object.fromEntries(classmates.map((c) => [c.id, c]));
+
+      // Score leaderboard
+      const { data: subs } = await supabase
+        .from("quiz_submissions")
+        .select("student_id, score")
+        .in("student_id", ids)
+        .eq("status", "graded");
+
+      const scoreAgg: Record<string, { total: number; count: number }> = {};
+      (subs || []).forEach((s) => {
+        if (s.score === null) return;
+        if (!scoreAgg[s.student_id]) scoreAgg[s.student_id] = { total: 0, count: 0 };
+        scoreAgg[s.student_id].total += Number(s.score);
+        scoreAgg[s.student_id].count += 1;
+      });
+
+      const scoreBoardData: LeaderEntry[] = Object.entries(scoreAgg)
+        .map(([id, { total, count }]) => ({
+          id,
+          full_name: profileMap[id]?.full_name || "Student",
+          avatar_url: profileMap[id]?.avatar_url || null,
+          value: Math.round(total / count),
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+      setScoreBoard(scoreBoardData);
+
+      // Attendance leaderboard
+      const { data: att } = await supabase
+        .from("attendance")
+        .select("student_id, status")
+        .in("student_id", ids)
+        .eq("status", "present");
+
+      const attAgg: Record<string, number> = {};
+      (att || []).forEach((a) => {
+        attAgg[a.student_id] = (attAgg[a.student_id] || 0) + 1;
+      });
+
+      const attendBoardData: LeaderEntry[] = Object.entries(attAgg)
+        .map(([id, count]) => ({
+          id,
+          full_name: profileMap[id]?.full_name || "Student",
+          avatar_url: profileMap[id]?.avatar_url || null,
+          value: count,
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+      setAttendBoard(attendBoardData);
+
+      setLeaderLoading(false);
+    };
+    loadLeaderboards();
+  }, [classId]);
 
   const getBadge = (score: number | null) => {
     if (score === null) return { emoji: "🌱", label: "Getting Started" };
@@ -50,6 +149,55 @@ const StudentDashboard = () => {
   };
 
   const badge = getBadge(avgScore);
+
+  const renderRankIcon = (index: number) => {
+    if (index === 0) return <Crown className={`w-4 h-4 ${MEDAL_COLORS[0]}`} />;
+    if (index === 1) return <Medal className={`w-4 h-4 ${MEDAL_COLORS[1]}`} />;
+    if (index === 2) return <Medal className={`w-4 h-4 ${MEDAL_COLORS[2]}`} />;
+    return <span className="text-xs font-bold text-muted-foreground w-4 text-center">{index + 1}</span>;
+  };
+
+  const renderAvatar = (entry: LeaderEntry) => {
+    const initials = (entry.full_name || "?").charAt(0).toUpperCase();
+    return (
+      <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 text-xs font-bold text-secondary-foreground">
+        {entry.avatar_url ? (
+          <img src={entry.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover" />
+        ) : (
+          initials
+        )}
+      </div>
+    );
+  };
+
+  const renderLeaderList = (entries: LeaderEntry[], unit: string) => {
+    if (entries.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground text-center py-4">No data yet</p>
+      );
+    }
+    return (
+      <div className="space-y-1.5">
+        {entries.map((entry, i) => (
+          <div
+            key={entry.id}
+            className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all ${
+              entry.id === user?.id
+                ? "bg-accent/50 ring-1 ring-primary/20"
+                : "hover:bg-muted/30"
+            }`}
+          >
+            {renderRankIcon(i)}
+            {renderAvatar(entry)}
+            <span className="text-sm font-medium truncate flex-1">{entry.full_name}</span>
+            <span className="text-xs font-bold text-primary shrink-0">
+              {entry.value}{unit}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <StudentLayout>
@@ -79,6 +227,47 @@ const StudentDashboard = () => {
           <p className="text-xs text-muted-foreground">{completedCount} quiz{completedCount !== 1 ? "zes" : ""} graded</p>
         </div>
 
+        {/* Class Leaderboard */}
+        <div className="space-y-3">
+          <h3 className="font-display font-bold text-base flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-primary" /> Class Leaderboard
+          </h3>
+          {!classId ? (
+            <div className="glass rounded-2xl p-6 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">Join a class to see the leaderboard!</p>
+              <button
+                onClick={() => navigate("/student/profile")}
+                className="text-xs font-bold text-primary underline"
+              >
+                Select your class →
+              </button>
+            </div>
+          ) : leaderLoading ? (
+            <div className="glass rounded-2xl p-6 text-center">
+              <p className="text-sm text-muted-foreground animate-pulse">Loading leaderboard...</p>
+            </div>
+          ) : (
+            <div className="glass rounded-2xl p-4">
+              <Tabs defaultValue="scores">
+                <TabsList className="w-full rounded-xl bg-muted/50">
+                  <TabsTrigger value="scores" className="flex-1 rounded-lg text-xs font-bold">
+                    ⭐ Top Scores
+                  </TabsTrigger>
+                  <TabsTrigger value="attendance" className="flex-1 rounded-lg text-xs font-bold">
+                    📅 Top Attendance
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="scores" className="mt-3">
+                  {renderLeaderList(scoreBoard, "%")}
+                </TabsContent>
+                <TabsContent value="attendance" className="mt-3">
+                  {renderLeaderList(attendBoard, " days")}
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+        </div>
+
         {/* Pending Quizzes */}
         {pendingQuizzes.length > 0 && (
           <div className="space-y-3">
@@ -92,8 +281,8 @@ const StudentDashboard = () => {
                   onClick={() => navigate(`/student/quiz/${q.id}`)}
                   className="glass rounded-2xl p-4 w-full text-left flex items-center gap-3 hover:shadow-lg transition-shadow"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-lavender flex items-center justify-center shrink-0">
-                    <ClipboardList className="w-5 h-5 text-plum" />
+                  <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                    <ClipboardList className="w-5 h-5 text-secondary-foreground" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-display font-bold text-sm truncate">{q.title}</p>

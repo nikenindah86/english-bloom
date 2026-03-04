@@ -12,8 +12,10 @@ const StudentProfile = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [classes, setClasses] = useState<{ id: string; class_name: string }[]>([]);
   const [profile, setProfile] = useState({
     full_name: "",
+    class_id: "",
     place_of_birth: "",
     date_of_birth: "",
     gender: "",
@@ -25,14 +27,18 @@ const StudentProfile = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, place_of_birth, date_of_birth, gender, address, phone, parent_name")
-        .eq("id", user.id)
-        .single();
+      const [{ data }, { data: classData }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name, class_id, place_of_birth, date_of_birth, gender, address, phone, parent_name")
+          .eq("id", user.id)
+          .single(),
+        supabase.from("classes").select("id, class_name").order("class_name"),
+      ]);
       if (data) {
         setProfile({
           full_name: data.full_name || "",
+          class_id: data.class_id || "",
           place_of_birth: data.place_of_birth || "",
           date_of_birth: data.date_of_birth || "",
           gender: data.gender || "",
@@ -41,6 +47,7 @@ const StudentProfile = () => {
           parent_name: data.parent_name || "",
         });
       }
+      setClasses(classData || []);
       setLoading(false);
     };
     load();
@@ -53,6 +60,7 @@ const StudentProfile = () => {
       .from("profiles")
       .update({
         full_name: profile.full_name || null,
+        class_id: profile.class_id || null,
         place_of_birth: profile.place_of_birth || null,
         date_of_birth: profile.date_of_birth || null,
         gender: profile.gender || null,
@@ -96,6 +104,20 @@ const StudentProfile = () => {
           <div className="space-y-2">
             <label className="text-sm font-medium">Full Name</label>
             <Input value={profile.full_name} onChange={(e) => update("full_name", e.target.value)} className="rounded-xl" />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Class</label>
+            <Select value={profile.class_id} onValueChange={(v) => update("class_id", v)}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Select your class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
