@@ -1,21 +1,27 @@
 
 
-## Issue Analysis
+## Problem
 
-Looking at the code, the Profile feature **is already fully implemented**:
+The screenshot shows a **404 "Page not found"** error on your Netlify deployment (`mrsnikenspace.netlify.app/student`). This happens because Netlify doesn't know how to handle client-side routing -- when you refresh a page like `/student`, Netlify looks for a real file at that path instead of serving your React app's `index.html`.
 
-1. **`StudentLayout.tsx` line 11**: Profile nav item exists with `UserCircle` icon pointing to `/student/profile`
-2. **`App.tsx` line 53**: Route `/student/profile` is registered with `ProtectedRoute`
-3. **`StudentProfile.tsx`**: Full biodata page exists with avatar upload, form fields, and save functionality
+This is a classic Single Page Application (SPA) deployment issue, not a bug in your code.
 
-The screenshot you shared shows only 4 tabs (Home, Materials, Quizzes, Grades) — this is likely a **cached or stale preview**. The current code has 5 tabs including Profile.
+## Solution
 
-## What needs to happen
+Create a `public/_redirects` file that tells Netlify to route all requests to `index.html`, letting React Router handle the routing.
 
-No code changes are needed. The Profile tab should already appear in the bottom navigation. Try:
+**File to create:** `public/_redirects`
+```
+/*    /index.html   200
+```
 
-1. **Hard-refresh the preview** (Ctrl+Shift+R or Cmd+Shift+R)
-2. Navigate to `/student/profile` directly to confirm the page loads
+That single line fixes all refresh/deep-link 404s on Netlify.
 
-If you still don't see it after refreshing, I can investigate further — but the code is correct and complete.
+## What changes
+
+| File | Action |
+|------|--------|
+| `public/_redirects` | Create -- single redirect rule for SPA routing |
+
+No database or component changes needed.
 
