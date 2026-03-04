@@ -1,39 +1,66 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Megaphone, FileText, ClipboardList, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import AdminLayout from "@/components/admin/AdminLayout";
+import AnnouncementSection from "@/components/admin/AnnouncementSection";
+import { Users, ClipboardList, FileText, Megaphone } from "lucide-react";
 
 const AdminDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { data: studentCount = 0 } = useQuery({
+    queryKey: ["admin-student-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "student");
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ["admin-pending-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("quiz_submissions")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending");
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: announcementCount = 0 } = useQuery({
+    queryKey: ["admin-announcement-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("announcements")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
+  const { data: materialCount = 0 } = useQuery({
+    queryKey: ["admin-material-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("materials")
+        .select("*", { count: "exact", head: true });
+      if (error) throw error;
+      return count || 0;
+    },
+  });
 
   const stats = [
-    { label: "Announcements", icon: Megaphone, count: 0, color: "bg-accent text-accent-foreground" },
-    { label: "Materials", icon: FileText, count: 0, color: "bg-secondary text-secondary-foreground" },
-    { label: "Quizzes", icon: ClipboardList, count: 0, color: "bg-lavender text-plum" },
-    { label: "Students", icon: Users, count: 0, color: "bg-blush text-primary" },
+    { label: "Students", icon: Users, count: studentCount, color: "bg-blush text-primary" },
+    { label: "Pending", icon: ClipboardList, count: pendingCount, color: "bg-lavender text-plum" },
+    { label: "Announcements", icon: Megaphone, count: announcementCount, color: "bg-accent text-accent-foreground" },
+    { label: "Materials", icon: FileText, count: materialCount, color: "bg-secondary text-secondary-foreground" },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
-        <div className="container flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-lg leading-tight">Teacher Dashboard</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
-            <LogOut className="w-5 h-5" />
-          </Button>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="container px-4 py-6 space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
         <div>
           <h2 className="font-display font-bold text-2xl">Welcome back! 👋</h2>
           <p className="text-muted-foreground mt-1">Here's your classroom overview</p>
@@ -54,13 +81,10 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Placeholder sections */}
-        <div className="glass rounded-2xl p-6 text-center space-y-2">
-          <Megaphone className="w-10 h-10 mx-auto text-muted-foreground/40" />
-          <p className="text-muted-foreground font-medium">Announcements, materials, and quizzes management coming in Phase 2</p>
-        </div>
-      </main>
-    </div>
+        {/* Announcements */}
+        <AnnouncementSection />
+      </div>
+    </AdminLayout>
   );
 };
 
