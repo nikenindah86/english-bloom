@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Home, Users, FileText, ClipboardList } from "lucide-react";
+import { BookOpen, LogOut, Home, Users, FileText, ClipboardList, CheckSquare, CalendarCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const navItems = [
@@ -8,6 +8,8 @@ const navItems = [
   { label: "Students", icon: Users, path: "/admin/students" },
   { label: "Materials", icon: FileText, path: "/admin/materials" },
   { label: "Quizzes", icon: ClipboardList, path: "/admin/quizzes" },
+  { label: "Grading", icon: CheckSquare, path: "/admin/grading" },
+  { label: "Attendance", icon: CalendarCheck, path: "/admin/attendance" },
 ];
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
@@ -55,8 +57,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
-                <span className="text-[10px] font-semibold">{item.label}</span>
+                <item.icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
+                <span className="text-[9px] font-semibold">{item.label}</span>
               </button>
             );
           })}
