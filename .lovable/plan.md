@@ -1,18 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Problem
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-Tombol "Sign In" dan "Create Account" di landing page terlalu kecil pada tampilan mobile — tingginya hanya `h-11` (44px) dari size `lg`, dan padding/font kurang besar untuk jari di layar kecil.
+Rencana implementasi:
 
-## Plan
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-Edit `src/pages/Index.tsx` — buat tombol lebih besar dan nyaman di mobile:
+File yang akan diubah:
 
-1. **Tambah tinggi tombol** — override ke `h-14` (56px) dengan `text-lg` dan `rounded-xl` agar lebih bold dan mudah di-tap
-2. **Pastikan layout tetap stacked (kolom)** pada mobile — hapus `sm:flex-row` agar tombol selalu full-width dan vertikal, lebih nyaman di mobile
-3. **Tambah gap** antar tombol dari `gap-3` ke `gap-4`
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-| File | Change |
-|------|--------|
-| `src/pages/Index.tsx` | Update button container and button classes for bigger, mobile-friendly sizing |
+Detail teknis:
 
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
