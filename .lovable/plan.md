@@ -2,28 +2,17 @@
 
 ## Problem
 
-The `public/_redirects` file exists and is correct, but the 404 still persists on your Netlify deployment. This can happen when Netlify doesn't pick up the `_redirects` file properly. The most reliable fix is to add a `netlify.toml` configuration file at the project root, which Netlify always reads.
+Tombol "Sign In" dan "Create Account" di landing page terlalu kecil pada tampilan mobile — tingginya hanya `h-11` (44px) dari size `lg`, dan padding/font kurang besar untuk jari di layar kecil.
 
 ## Plan
 
-Create a **`netlify.toml`** file in the project root with SPA redirect rules. This takes precedence over `_redirects` and is the recommended approach for Vite + Netlify projects.
+Edit `src/pages/Index.tsx` — buat tombol lebih besar dan nyaman di mobile:
 
-| File | Action |
+1. **Tambah tinggi tombol** — override ke `h-14` (56px) dengan `text-lg` dan `rounded-xl` agar lebih bold dan mudah di-tap
+2. **Pastikan layout tetap stacked (kolom)** pada mobile — hapus `sm:flex-row` agar tombol selalu full-width dan vertikal, lebih nyaman di mobile
+3. **Tambah gap** antar tombol dari `gap-3` ke `gap-4`
+
+| File | Change |
 |------|--------|
-| `netlify.toml` | Create at project root with build settings and SPA redirect rule |
-
-The file will contain:
-
-```toml
-[build]
-  command = "npm run build"
-  publish = "dist"
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-```
-
-After this deploys, all routes like `/student`, `/admin/classes`, etc. will work correctly on refresh.
+| `src/pages/Index.tsx` | Update button container and button classes for bigger, mobile-friendly sizing |
 
