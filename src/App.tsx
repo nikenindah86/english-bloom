@@ -11,6 +11,9 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminStudents from "./pages/AdminStudents";
+import AdminMaterials from "./pages/AdminMaterials";
+import AdminQuizzes from "./pages/AdminQuizzes";
 import StudentDashboard from "./pages/StudentDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +37,30 @@ const App = () => (
               element={
                 <ProtectedRoute requiredRole="teacher">
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students"
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AdminStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/materials"
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AdminMaterials />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/quizzes"
+              element={
+                <ProtectedRoute requiredRole="teacher">
+                  <AdminQuizzes />
                 </ProtectedRoute>
               }
             />
