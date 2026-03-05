@@ -49,6 +49,11 @@ const AdminQuizzes = () => {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [classId, setClassId] = useState<string>("");
+  const [timeLimit, setTimeLimit] = useState<string>("");
+  const [showAnswersAfter, setShowAnswersAfter] = useState(true);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleOptions, setShuffleOptions] = useState(false);
+  const [pointsPerQuestion, setPointsPerQuestion] = useState("100");
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion(0)]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
