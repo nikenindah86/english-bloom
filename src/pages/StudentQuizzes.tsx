@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, CheckCircle } from "lucide-react";
+import { ClipboardList, CheckCircle, Clock, Trophy } from "lucide-react";
 
 const StudentQuizzes = () => {
   const { user } = useAuth();
@@ -64,6 +64,16 @@ const StudentQuizzes = () => {
                   <div className="min-w-0 flex-1">
                     <p className="font-display font-bold text-sm truncate">{q.title}</p>
                     {q.description && <p className="text-xs text-muted-foreground truncate">{q.description}</p>}
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      {q.time_limit && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <Clock className="w-3 h-3" /> {q.time_limit}s
+                        </span>
+                      )}
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Trophy className="w-3 h-3" /> {q.points_per_question || 100}pts
+                      </span>
+                    </div>
                   </div>
                   <Badge variant={done ? "secondary" : "default"} className="text-[10px] shrink-0">{done ? "Done" : "Start"}</Badge>
                 </button>
