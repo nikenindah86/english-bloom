@@ -6,8 +6,10 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { GraduationCap, Plus, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { GraduationCap, Plus, ChevronRight, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminClasses = () => {
@@ -16,11 +18,14 @@ const AdminClasses = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   const { data: classes = [], isLoading } = useQuery({
-    queryKey: ["admin-classes"],
+    queryKey: ["admin-classes", showArchived],
     queryFn: async () => {
-      const { data, error } = await supabase.from("classes").select("*").order("created_at", { ascending: false });
+      let q = supabase.from("classes").select("*").order("created_at", { ascending: false });
+      if (!showArchived) q = q.eq("is_archived", false);
+      const { data, error } = await q;
       if (error) throw error;
       return data;
     },
@@ -55,6 +60,11 @@ const AdminClasses = () => {
           </Button>
         </div>
 
+        <div className="flex items-center gap-2">
+          <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+          <span className="text-sm text-muted-foreground">Show archived</span>
+        </div>
+
         {isLoading ? (
           <div className="glass rounded-2xl p-8 text-center"><p className="text-muted-foreground text-sm">Loading...</p></div>
         ) : classes.length === 0 ? (
@@ -64,17 +74,20 @@ const AdminClasses = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {classes.map((cls) => (
+            {classes.map((cls: any) => (
               <button
                 key={cls.id}
                 onClick={() => navigate(`/admin/classes/${cls.id}`)}
-                className="glass rounded-2xl p-4 w-full text-left flex items-center gap-4 transition-shadow hover:shadow-lg"
+                className={`glass rounded-2xl p-4 w-full text-left flex items-center gap-4 transition-shadow hover:shadow-lg ${cls.is_archived ? "opacity-50" : ""}`}
               >
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5 text-accent-foreground" />
+                  {cls.is_archived ? <Archive className="w-5 h-5 text-muted-foreground" /> : <GraduationCap className="w-5 h-5 text-accent-foreground" />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-display font-bold text-sm truncate">{cls.class_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-display font-bold text-sm truncate">{cls.class_name}</p>
+                    {cls.is_archived && <Badge variant="secondary" className="text-[10px]">Archived</Badge>}
+                  </div>
                   {cls.description && <p className="text-xs text-muted-foreground truncate">{cls.description}</p>}
                   {cls.join_code && <p className="text-[10px] text-primary font-mono mt-0.5">Code: {cls.join_code}</p>}
                 </div>

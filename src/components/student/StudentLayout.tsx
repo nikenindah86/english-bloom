@@ -1,62 +1,98 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Home, FileText, ClipboardList, Star, User } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { NavLink } from "@/components/NavLink";
+import NotificationBell from "@/components/NotificationBell";
+import { BookOpen, LogOut, Home, FileText, ClipboardList, Star, User, FileCheck, CalendarDays } from "lucide-react";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarProvider, SidebarTrigger, useSidebar,
+} from "@/components/ui/sidebar";
 
 const navItems = [
   { label: "Home", icon: Home, path: "/student" },
   { label: "Materials", icon: FileText, path: "/student/materials" },
   { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes" },
+  { label: "Assignments", icon: FileCheck, path: "/student/assignments" },
+  { label: "Schedule", icon: CalendarDays, path: "/student/schedule" },
   { label: "Grades", icon: Star, path: "/student/grades" },
   { label: "Profile", icon: User, path: "/student/profile" },
 ];
 
-const StudentLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, signOut } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+const StudentSidebar = () => {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
-        <div className="container flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-lg leading-tight">Student Portal</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
+    <Sidebar collapsible="icon">
+      <SidebarContent className="pt-4">
+        <div className="px-4 pb-2 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shrink-0">
+            <BookOpen className="w-4 h-4 text-primary" />
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
-            <LogOut className="w-5 h-5" />
-          </Button>
+          {!collapsed && (
+            <span className="font-display font-bold text-sm truncate">Student Portal</span>
+          )}
         </div>
-      </header>
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70">
+            Menu
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.path}>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to={item.path}
+                      end={item.path === "/student"}
+                      className="hover:bg-sidebar-accent/50"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>{item.label}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+};
 
-      <main className="container px-4 py-6">{children}</main>
+const StudentLayout = ({ children }: { children: React.ReactNode }) => {
+  const { user, signOut } = useAuth();
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-border/50">
-        <div className="container flex items-center justify-around h-16 px-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors min-w-[64px] ${
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
-                <span className="text-[10px] font-semibold">{item.label}</span>
-              </button>
-            );
-          })}
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <StudentSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
+            <div className="flex items-center justify-between h-14 px-4">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger />
+                <div className="hidden sm:block">
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 px-4 py-6 max-w-4xl mx-auto w-full">
+            {children}
+          </main>
         </div>
-      </nav>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

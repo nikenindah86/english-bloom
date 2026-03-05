@@ -3,13 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
+import StreamComments from "@/components/StreamComments";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Copy, Megaphone, Users, FileText, ClipboardList, Plus, Settings, RefreshCw } from "lucide-react";
+import { ArrowLeft, Copy, Megaphone, Users, FileText, ClipboardList, Plus, RefreshCw, FileCheck, Archive, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -58,6 +59,15 @@ const AdminClassDetail = () => {
     enabled: !!id,
   });
 
+  const { data: assignments = [] } = useQuery({
+    queryKey: ["class-assignments", id],
+    queryFn: async () => {
+      const { data } = await supabase.from("assignments").select("*").eq("class_id", id!).order("created_at", { ascending: false });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   const { data: announcements = [] } = useQuery({
     queryKey: ["class-announcements"],
     queryFn: async () => {
@@ -92,6 +102,18 @@ const AdminClassDetail = () => {
     },
   });
 
+  const toggleArchive = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("classes").update({ is_archived: !cls?.is_archived }).eq("id", id!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["class-detail", id] });
+      queryClient.invalidateQueries({ queryKey: ["admin-classes"] });
+      toast.success(cls?.is_archived ? "Class restored!" : "Class archived!");
+    },
+  });
+
   const copyCode = () => {
     if (cls?.join_code) {
       navigator.clipboard.writeText(cls.join_code);
@@ -108,19 +130,24 @@ const AdminClassDetail = () => {
           <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => navigate("/admin/classes")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
-          <div>
-            <h2 className="font-display font-bold text-2xl">{cls.class_name}</h2>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="font-display font-bold text-2xl truncate">{cls.class_name}</h2>
+              {cls.is_archived && <Badge variant="secondary" className="text-[10px]">Archived</Badge>}
+            </div>
             {cls.description && <p className="text-muted-foreground text-sm">{cls.description}</p>}
           </div>
+          <Button variant="outline" size="sm" className="rounded-xl gap-1 shrink-0" onClick={() => toggleArchive.mutate()}>
+            {cls.is_archived ? <ArchiveRestore className="w-3 h-3" /> : <Archive className="w-3 h-3" />}
+            {cls.is_archived ? "Restore" : "Archive"}
+          </Button>
         </div>
 
         {/* Join Code */}
         <div className="glass rounded-2xl p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground font-medium">Join Code</p>
-            <p className="font-display font-bold text-lg tracking-widest">
-              {cls.join_code || "Not set"}
-            </p>
+            <p className="font-display font-bold text-lg tracking-widest">{cls.join_code || "Not set"}</p>
           </div>
           <div className="flex gap-2">
             {cls.join_code && (
@@ -163,6 +190,7 @@ const AdminClassDetail = () => {
                     <span className="text-[10px] text-muted-foreground">{format(new Date(a.created_at), "MMM d")}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{a.content}</p>
+                  <StreamComments announcementId={a.id} isTeacher />
                 </div>
               ))
             )}
@@ -189,12 +217,13 @@ const AdminClassDetail = () => {
           </TabsContent>
 
           <TabsContent value="content" className="mt-4 space-y-4">
+            {/* Materials */}
             <div className="space-y-2">
               <h4 className="font-display font-bold text-sm flex items-center gap-2">
                 <FileText className="w-4 h-4 text-primary" /> Materials ({materials.length})
               </h4>
               {materials.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No materials assigned to this class</p>
+                <p className="text-xs text-muted-foreground">No materials assigned</p>
               ) : (
                 materials.map((m) => (
                   <div key={m.id} className="glass rounded-xl p-3 flex items-center gap-3">
@@ -204,12 +233,13 @@ const AdminClassDetail = () => {
                 ))
               )}
             </div>
+            {/* Quizzes */}
             <div className="space-y-2">
               <h4 className="font-display font-bold text-sm flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" /> Quizzes ({quizzes.length})
               </h4>
               {quizzes.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No quizzes assigned to this class</p>
+                <p className="text-xs text-muted-foreground">No quizzes assigned</p>
               ) : (
                 quizzes.map((q) => (
                   <div key={q.id} className="glass rounded-xl p-3 flex items-center gap-3">
@@ -217,6 +247,24 @@ const AdminClassDetail = () => {
                       {q.is_active ? "Active" : "Draft"}
                     </Badge>
                     <span className="text-sm truncate">{q.title}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Assignments */}
+            <div className="space-y-2">
+              <h4 className="font-display font-bold text-sm flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-primary" /> Assignments ({assignments.length})
+              </h4>
+              {assignments.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No assignments</p>
+              ) : (
+                assignments.map((a) => (
+                  <div key={a.id} className="glass rounded-xl p-3 flex items-center gap-3">
+                    <Badge variant="outline" className="text-[10px]">
+                      {a.due_date ? format(new Date(a.due_date), "MMM d") : "No deadline"}
+                    </Badge>
+                    <span className="text-sm truncate">{a.title}</span>
                   </div>
                 ))
               )}
