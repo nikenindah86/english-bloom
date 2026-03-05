@@ -482,6 +482,11 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          points_per_question: number
+          show_answers_after: boolean
+          shuffle_options: boolean
+          shuffle_questions: boolean
+          time_limit: number | null
           title: string
         }
         Insert: {
@@ -490,6 +495,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          points_per_question?: number
+          show_answers_after?: boolean
+          shuffle_options?: boolean
+          shuffle_questions?: boolean
+          time_limit?: number | null
           title: string
         }
         Update: {
@@ -498,6 +508,11 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          points_per_question?: number
+          show_answers_after?: boolean
+          shuffle_options?: boolean
+          shuffle_questions?: boolean
+          time_limit?: number | null
           title?: string
         }
         Relationships: [
@@ -579,22 +594,31 @@ export type Database = {
           answer_text: string | null
           created_at: string
           id: string
+          is_correct: boolean | null
+          points: number
           question_id: string
           submission_id: string
+          time_taken_ms: number | null
         }
         Insert: {
           answer_text?: string | null
           created_at?: string
           id?: string
+          is_correct?: boolean | null
+          points?: number
           question_id: string
           submission_id: string
+          time_taken_ms?: number | null
         }
         Update: {
           answer_text?: string | null
           created_at?: string
           id?: string
+          is_correct?: boolean | null
+          points?: number
           question_id?: string
           submission_id?: string
+          time_taken_ms?: number | null
         }
         Relationships: [
           {

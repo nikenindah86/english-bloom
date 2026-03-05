@@ -49,6 +49,11 @@ const AdminQuizzes = () => {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(false);
   const [classId, setClassId] = useState<string>("");
+  const [timeLimit, setTimeLimit] = useState<string>("");
+  const [showAnswersAfter, setShowAnswersAfter] = useState(true);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleOptions, setShuffleOptions] = useState(false);
+  const [pointsPerQuestion, setPointsPerQuestion] = useState("100");
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion(0)]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -76,11 +81,16 @@ const AdminQuizzes = () => {
   useEffect(() => { fetchQuizzes(); }, []);
 
   const openCreate = () => {
-    setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId(""); setQuestions([emptyQuestion(0)]); setDialogOpen(true);
+    setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId("");
+    setTimeLimit(""); setShowAnswersAfter(true); setShuffleQuestions(false); setShuffleOptions(false); setPointsPerQuestion("100");
+    setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
-  const openEdit = async (quiz: Quiz) => {
+  const openEdit = async (quiz: Quiz & { time_limit?: number; show_answers_after?: boolean; shuffle_questions?: boolean; shuffle_options?: boolean; points_per_question?: number }) => {
     setEditingQuizId(quiz.id); setTitle(quiz.title); setDescription(quiz.description || ""); setIsActive(quiz.is_active); setClassId(quiz.class_id || "");
+    setTimeLimit(quiz.time_limit?.toString() || ""); setShowAnswersAfter(quiz.show_answers_after ?? true);
+    setShuffleQuestions(quiz.shuffle_questions ?? false); setShuffleOptions(quiz.shuffle_options ?? false);
+    setPointsPerQuestion((quiz.points_per_question ?? 100).toString());
     const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
     if (data && data.length > 0) {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
@@ -102,10 +112,20 @@ const AdminQuizzes = () => {
     try {
       let quizId = editingQuizId;
       if (editingQuizId) {
-        await supabase.from("quizzes").update({ title, description: description || null, is_active: isActive, class_id: classId || null }).eq("id", editingQuizId);
+        await supabase.from("quizzes").update({
+          title, description: description || null, is_active: isActive, class_id: classId || null,
+          time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
+          shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
+          points_per_question: parseInt(pointsPerQuestion) || 100,
+        }).eq("id", editingQuizId);
         await supabase.from("quiz_questions").delete().eq("quiz_id", editingQuizId);
       } else {
-        const { data } = await supabase.from("quizzes").insert({ title, description: description || null, is_active: isActive, class_id: classId || null }).select().single();
+        const { data } = await supabase.from("quizzes").insert({
+          title, description: description || null, is_active: isActive, class_id: classId || null,
+          time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
+          shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
+          points_per_question: parseInt(pointsPerQuestion) || 100,
+        }).select().single();
         quizId = data!.id;
       }
       const questionRows = questions.map((q, i) => ({ quiz_id: quizId!, question_text: q.question_text, question_type: q.question_type, media_url: q.media_url || null, options: q.question_type === "multiple_choice" ? q.options : null, correct_answer: q.correct_answer || null, order_index: i }));
@@ -177,6 +197,23 @@ const AdminQuizzes = () => {
             </div>
             <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>Active (visible to students)</Label></div>
 
+            {/* Gamification Settings */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <h4 className="font-semibold text-sm">⚡ Quiz Settings</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Timer per question (seconds)</Label>
+                  <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} placeholder="No timer" className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Points per question</Label>
+                  <Input type="number" value={pointsPerQuestion} onChange={(e) => setPointsPerQuestion(e.target.value)} placeholder="100" className="h-8 text-xs" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2"><Switch checked={showAnswersAfter} onCheckedChange={setShowAnswersAfter} /><Label className="text-xs">Show correct answer after each question</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} /><Label className="text-xs">Shuffle question order</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={shuffleOptions} onCheckedChange={setShuffleOptions} /><Label className="text-xs">Shuffle MCQ options</Label></div>
+            </div>
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-sm">Questions</h4>
