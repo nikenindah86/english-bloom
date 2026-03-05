@@ -81,11 +81,16 @@ const AdminQuizzes = () => {
   useEffect(() => { fetchQuizzes(); }, []);
 
   const openCreate = () => {
-    setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId(""); setQuestions([emptyQuestion(0)]); setDialogOpen(true);
+    setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId("");
+    setTimeLimit(""); setShowAnswersAfter(true); setShuffleQuestions(false); setShuffleOptions(false); setPointsPerQuestion("100");
+    setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
-  const openEdit = async (quiz: Quiz) => {
+  const openEdit = async (quiz: Quiz & { time_limit?: number; show_answers_after?: boolean; shuffle_questions?: boolean; shuffle_options?: boolean; points_per_question?: number }) => {
     setEditingQuizId(quiz.id); setTitle(quiz.title); setDescription(quiz.description || ""); setIsActive(quiz.is_active); setClassId(quiz.class_id || "");
+    setTimeLimit(quiz.time_limit?.toString() || ""); setShowAnswersAfter(quiz.show_answers_after ?? true);
+    setShuffleQuestions(quiz.shuffle_questions ?? false); setShuffleOptions(quiz.shuffle_options ?? false);
+    setPointsPerQuestion((quiz.points_per_question ?? 100).toString());
     const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
     if (data && data.length > 0) {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
@@ -107,10 +112,20 @@ const AdminQuizzes = () => {
     try {
       let quizId = editingQuizId;
       if (editingQuizId) {
-        await supabase.from("quizzes").update({ title, description: description || null, is_active: isActive, class_id: classId || null }).eq("id", editingQuizId);
+        await supabase.from("quizzes").update({
+          title, description: description || null, is_active: isActive, class_id: classId || null,
+          time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
+          shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
+          points_per_question: parseInt(pointsPerQuestion) || 100,
+        }).eq("id", editingQuizId);
         await supabase.from("quiz_questions").delete().eq("quiz_id", editingQuizId);
       } else {
-        const { data } = await supabase.from("quizzes").insert({ title, description: description || null, is_active: isActive, class_id: classId || null }).select().single();
+        const { data } = await supabase.from("quizzes").insert({
+          title, description: description || null, is_active: isActive, class_id: classId || null,
+          time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
+          shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
+          points_per_question: parseInt(pointsPerQuestion) || 100,
+        }).select().single();
         quizId = data!.id;
       }
       const questionRows = questions.map((q, i) => ({ quiz_id: quizId!, question_text: q.question_text, question_type: q.question_type, media_url: q.media_url || null, options: q.question_type === "multiple_choice" ? q.options : null, correct_answer: q.correct_answer || null, order_index: i }));
