@@ -1,9 +1,10 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
+import NotificationBell from "@/components/NotificationBell";
 import {
   BookOpen, LogOut, Home, Users, FileText, ClipboardList,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -21,18 +22,20 @@ const academicItems = [
   { title: "Students", url: "/admin/students", icon: Users },
   { title: "Materials", url: "/admin/materials", icon: FileText },
   { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
+  { title: "Assignments", url: "/admin/assignments", icon: FileCheck },
+  { title: "Schedule", url: "/admin/schedule", icon: CalendarDays },
 ];
 
 const assessmentItems = [
   { title: "Grading", url: "/admin/grading", icon: CheckSquare },
   { title: "Manual Grades", url: "/admin/manual-grades", icon: PenLine },
   { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
+  { title: "Student Notes", url: "/admin/student-notes", icon: StickyNote },
 ];
 
 const AdminSidebar = () => {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
 
   const renderGroup = (label: string, items: typeof mainItems) => (
     <SidebarGroup>
@@ -96,9 +99,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </header>
           <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
