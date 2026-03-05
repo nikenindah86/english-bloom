@@ -1,35 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Student Profile Detail View for Admin + Photo Upload
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Problem
-1. Admin Students page (`/admin/students`) only shows name and join date. Clicking edit only allows changing the name. There's no way for teachers to see the full biodata (class, DOB, address, phone, parent, gender, etc.).
-2. Student profile form has no photo/avatar upload capability.
+Rencana implementasi:
 
-### Changes
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-#### 1. Admin Student Detail Dialog
-**File: `src/pages/AdminStudents.tsx`**
-- Expand the student query to fetch ALL profile fields (class_id, place_of_birth, date_of_birth, gender, address, phone, parent_name, avatar_url)
-- Join with `classes` to get class_name for display
-- Replace the simple edit dialog with a detail/view dialog showing all biodata in a clean read-only card layout
-- Keep the edit name functionality but also show all other fields as read-only info
-- Show avatar photo if available (or letter fallback)
+File yang akan diubah:
 
-#### 2. Photo Upload in Student Profile
-**Database migration**: Create `avatars` storage bucket (public) with RLS for users to upload their own avatar.
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-**File: `src/pages/StudentProfile.tsx`**
-- Add avatar upload section at the top of the form (circular photo area with camera/upload icon)
-- On file select: upload to `avatars/{user.id}` in storage, get public URL, save to `profiles.avatar_url`
-- Show current avatar or letter fallback
-- Load `avatar_url` from profile on mount
+Detail teknis:
 
-### Files
-
-| File | Change |
-|------|--------|
-| Migration | Create `avatars` storage bucket + RLS policies |
-| `src/pages/AdminStudents.tsx` | Fetch full profile, show detail dialog with all biodata |
-| `src/pages/StudentProfile.tsx` | Add avatar upload with preview |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
