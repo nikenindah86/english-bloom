@@ -197,6 +197,23 @@ const AdminQuizzes = () => {
             </div>
             <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>Active (visible to students)</Label></div>
 
+            {/* Gamification Settings */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <h4 className="font-semibold text-sm">⚡ Quiz Settings</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Timer per question (seconds)</Label>
+                  <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} placeholder="No timer" className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Points per question</Label>
+                  <Input type="number" value={pointsPerQuestion} onChange={(e) => setPointsPerQuestion(e.target.value)} placeholder="100" className="h-8 text-xs" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2"><Switch checked={showAnswersAfter} onCheckedChange={setShowAnswersAfter} /><Label className="text-xs">Show correct answer after each question</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} /><Label className="text-xs">Shuffle question order</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={shuffleOptions} onCheckedChange={setShuffleOptions} /><Label className="text-xs">Shuffle MCQ options</Label></div>
+            </div>
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-sm">Questions</h4>
