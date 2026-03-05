@@ -23,6 +23,8 @@ import StudentQuiz from "./pages/StudentQuiz";
 import StudentGrades from "./pages/StudentGrades";
 import StudentProfile from "./pages/StudentProfile";
 import AdminClasses from "./pages/AdminClasses";
+import AdminClassDetail from "./pages/AdminClassDetail";
+import AdminManualGrades from "./pages/AdminManualGrades";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,8 @@ const App = () => (
             <Route path="/admin/grading" element={<ProtectedRoute requiredRole="teacher"><AdminGrading /></ProtectedRoute>} />
             <Route path="/admin/attendance" element={<ProtectedRoute requiredRole="teacher"><AdminAttendance /></ProtectedRoute>} />
             <Route path="/admin/classes" element={<ProtectedRoute requiredRole="teacher"><AdminClasses /></ProtectedRoute>} />
+            <Route path="/admin/classes/:id" element={<ProtectedRoute requiredRole="teacher"><AdminClassDetail /></ProtectedRoute>} />
+            <Route path="/admin/manual-grades" element={<ProtectedRoute requiredRole="teacher"><AdminManualGrades /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/materials" element={<ProtectedRoute requiredRole="student"><StudentMaterials /></ProtectedRoute>} />
             <Route path="/student/quizzes" element={<ProtectedRoute requiredRole="student"><StudentQuizzes /></ProtectedRoute>} />

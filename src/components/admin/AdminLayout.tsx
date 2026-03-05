@@ -1,115 +1,112 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { BookOpen, LogOut, Home, Users, FileText, ClipboardList, CheckSquare, CalendarCheck, GraduationCap, MoreHorizontal } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useState } from "react";
+import { NavLink } from "@/components/NavLink";
+import {
+  BookOpen, LogOut, Home, Users, FileText, ClipboardList,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine,
+} from "lucide-react";
+import {
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarProvider, SidebarTrigger, useSidebar,
+} from "@/components/ui/sidebar";
+import { useLocation } from "react-router-dom";
 
-const mainNavItems = [
-  { label: "Home", icon: Home, path: "/admin" },
-  { label: "Students", icon: Users, path: "/admin/students" },
-  { label: "Classes", icon: GraduationCap, path: "/admin/classes" },
-  { label: "Materials", icon: FileText, path: "/admin/materials" },
-  { label: "Quizzes", icon: ClipboardList, path: "/admin/quizzes" },
+const mainItems = [
+  { title: "Dashboard", url: "/admin", icon: Home },
 ];
 
-const moreNavItems = [
-  { label: "Grading", icon: CheckSquare, path: "/admin/grading" },
-  { label: "Attendance", icon: CalendarCheck, path: "/admin/attendance" },
+const academicItems = [
+  { title: "Classes", url: "/admin/classes", icon: GraduationCap },
+  { title: "Students", url: "/admin/students", icon: Users },
+  { title: "Materials", url: "/admin/materials", icon: FileText },
+  { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
 ];
 
-const AdminLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, signOut } = useAuth();
+const assessmentItems = [
+  { title: "Grading", url: "/admin/grading", icon: CheckSquare },
+  { title: "Manual Grades", url: "/admin/manual-grades", icon: PenLine },
+  { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
+];
+
+const AdminSidebar = () => {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
   const location = useLocation();
-  const navigate = useNavigate();
+
+  const renderGroup = (label: string, items: typeof mainItems) => (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/70">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.url}>
+              <SidebarMenuButton asChild>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/admin"}
+                  className="hover:bg-sidebar-accent/50"
+                  activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
-        <div className="container flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-lg leading-tight">Teacher Dashboard</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
+    <Sidebar collapsible="icon">
+      <SidebarContent className="pt-4">
+        <div className="px-4 pb-2 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <BookOpen className="w-4 h-4 text-primary" />
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
-            <LogOut className="w-5 h-5" />
-          </Button>
+          {!collapsed && (
+            <span className="font-display font-bold text-sm truncate">Teacher Panel</span>
+          )}
         </div>
-      </header>
-
-      {/* Content */}
-      <main className="container px-4 py-6">
-        {children}
-      </main>
-
-      {/* Bottom Navigation */}
-      <BottomNav location={location} navigate={navigate} />
-    </div>
+        {renderGroup("Main", mainItems)}
+        {renderGroup("Academic", academicItems)}
+        {renderGroup("Assessment", assessmentItems)}
+      </SidebarContent>
+    </Sidebar>
   );
 };
 
-const BottomNav = ({ location, navigate }: { location: ReturnType<typeof useLocation>; navigate: ReturnType<typeof useNavigate> }) => {
-  const [moreOpen, setMoreOpen] = useState(false);
-  const isMoreActive = moreNavItems.some((item) => location.pathname === item.path);
+const AdminLayout = ({ children }: { children: React.ReactNode }) => {
+  const { user, signOut } = useAuth();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-border/50">
-      <div className="container flex items-center justify-around h-16 px-2">
-        {mainNavItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-colors min-w-[56px] ${
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <item.icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
-              <span className="text-[9px] font-semibold">{item.label}</span>
-            </button>
-          );
-        })}
-        <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-          <PopoverTrigger asChild>
-            <button
-              className={`flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-colors min-w-[56px] ${
-                isMoreActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <MoreHorizontal className={`w-4 h-4 ${isMoreActive ? "text-primary" : ""}`} />
-              <span className="text-[9px] font-semibold">More</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="top" align="end" className="w-48 p-2 rounded-xl">
-            {moreNavItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => {
-                    navigate(item.path);
-                    setMoreOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
-                    isActive ? "text-primary bg-accent" : "text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-          </PopoverContent>
-        </Popover>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <AdminSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
+            <div className="flex items-center justify-between h-14 px-4">
+              <div className="flex items-center gap-2">
+                <SidebarTrigger />
+                <div className="hidden sm:block">
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={signOut} className="rounded-xl">
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          </header>
+          <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
+            {children}
+          </main>
+        </div>
       </div>
-    </nav>
+    </SidebarProvider>
   );
 };
 

@@ -16,8 +16,18 @@ const StudentQuizzes = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      const { data: profile } = await supabase.from("profiles").select("class_id").eq("id", user.id).single();
+      const classId = profile?.class_id;
+
+      let quizQuery = supabase.from("quizzes").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      if (classId) {
+        quizQuery = quizQuery.or(`class_id.eq.${classId},class_id.is.null`);
+      } else {
+        quizQuery = quizQuery.is("class_id", null);
+      }
+
       const [qRes, sRes] = await Promise.all([
-        supabase.from("quizzes").select("*").eq("is_active", true).order("created_at", { ascending: false }),
+        quizQuery,
         supabase.from("quiz_submissions").select("quiz_id").eq("student_id", user.id),
       ]);
       setQuizzes(qRes.data || []);
@@ -36,11 +46,7 @@ const StudentQuizzes = () => {
         </div>
 
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="glass rounded-2xl p-5 h-20 animate-pulse" />
-            ))}
-          </div>
+          <div className="space-y-3">{[1, 2, 3].map((i) => (<div key={i} className="glass rounded-2xl p-5 h-20 animate-pulse" />))}</div>
         ) : quizzes.length === 0 ? (
           <div className="glass rounded-2xl p-8 text-center">
             <ClipboardList className="w-10 h-10 mx-auto text-muted-foreground/40" />
@@ -51,27 +57,15 @@ const StudentQuizzes = () => {
             {quizzes.map((q) => {
               const done = submittedIds.has(q.id);
               return (
-                <button
-                  key={q.id}
-                  onClick={() => navigate(`/student/quiz/${q.id}`)}
-                  className="glass rounded-2xl p-4 w-full text-left flex items-center gap-3 hover:shadow-lg transition-shadow"
-                >
+                <button key={q.id} onClick={() => navigate(`/student/quiz/${q.id}`)} className="glass rounded-2xl p-4 w-full text-left flex items-center gap-3 hover:shadow-lg transition-shadow">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? "bg-secondary" : "bg-lavender"}`}>
-                    {done ? (
-                      <CheckCircle className="w-5 h-5 text-secondary-foreground" />
-                    ) : (
-                      <ClipboardList className="w-5 h-5 text-plum" />
-                    )}
+                    {done ? <CheckCircle className="w-5 h-5 text-secondary-foreground" /> : <ClipboardList className="w-5 h-5 text-plum" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-display font-bold text-sm truncate">{q.title}</p>
-                    {q.description && (
-                      <p className="text-xs text-muted-foreground truncate">{q.description}</p>
-                    )}
+                    {q.description && <p className="text-xs text-muted-foreground truncate">{q.description}</p>}
                   </div>
-                  <Badge variant={done ? "secondary" : "default"} className="text-[10px] shrink-0">
-                    {done ? "Done" : "Start"}
-                  </Badge>
+                  <Badge variant={done ? "secondary" : "default"} className="text-[10px] shrink-0">{done ? "Done" : "Start"}</Badge>
                 </button>
               );
             })}
