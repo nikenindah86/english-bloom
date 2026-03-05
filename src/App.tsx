@@ -23,6 +23,8 @@ import StudentQuiz from "./pages/StudentQuiz";
 import StudentGrades from "./pages/StudentGrades";
 import StudentProfile from "./pages/StudentProfile";
 import AdminClasses from "./pages/AdminClasses";
+import AdminClassDetail from "./pages/AdminClassDetail";
+import AdminManualGrades from "./pages/AdminManualGrades";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
