@@ -76,23 +76,71 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          join_code: string | null
         }
         Insert: {
           class_name: string
           created_at?: string
           description?: string | null
           id?: string
+          join_code?: string | null
         }
         Update: {
           class_name?: string
           created_at?: string
           description?: string | null
           id?: string
+          join_code?: string | null
         }
         Relationships: []
       }
+      manual_grades: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          feedback: string | null
+          grade_date: string
+          id: string
+          max_score: number
+          score: number
+          student_id: string
+          title: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          grade_date?: string
+          id?: string
+          max_score?: number
+          score: number
+          student_id: string
+          title: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          feedback?: string | null
+          grade_date?: string
+          id?: string
+          max_score?: number
+          score?: number
+          student_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manual_grades_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
+          class_id: string | null
           created_at: string
           description: string | null
           file_url: string | null
@@ -101,6 +149,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          class_id?: string | null
           created_at?: string
           description?: string | null
           file_url?: string | null
@@ -109,6 +158,7 @@ export type Database = {
           type: string
         }
         Update: {
+          class_id?: string | null
           created_at?: string
           description?: string | null
           file_url?: string | null
@@ -116,7 +166,15 @@ export type Database = {
           title?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "materials_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -255,6 +313,7 @@ export type Database = {
       }
       quizzes: {
         Row: {
+          class_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -262,6 +321,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          class_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -269,13 +329,22 @@ export type Database = {
           title: string
         }
         Update: {
+          class_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_active?: boolean
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       submission_answers: {
         Row: {
