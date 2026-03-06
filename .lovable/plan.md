@@ -1,51 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Excel-style Table Input for Manual Grades
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Current State
-Manual grades uses a one-by-one dialog approach. User wants a spreadsheet-like table where they can quickly input grades for multiple students at once.
+Rencana implementasi:
 
-### Changes
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-**File: `src/pages/AdminManualGrades.tsx`** — Major rewrite
+File yang akan diubah:
 
-Add a new "Table Mode" alongside the existing single-entry dialog:
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-1. **Two modes toggle**: "Card View" (existing) and "Table Entry" (new), switched via Tabs at the top
-2. **Table Entry mode**:
-   - Select class filter and set shared fields (title, max score, date) at the top
-   - Render an editable table with all students from the selected class as rows
-   - Columns: Student Name (read-only), Score (editable input), Feedback (editable input)
-   - Pre-fill with existing grades if they match the same title + date
-   - "Save All" button at bottom to bulk upsert all rows with non-empty scores
-3. **Card View**: Keep existing card list with single-entry dialog (no change)
+Detail teknis:
 
-### UI Layout (Table Mode)
-
-```text
-┌──────────────────────────────────────────────┐
-│  [Class: ▼]  [Title: ____]  [Max: 100]      │
-│  [Date: ____]                                │
-├──────────────────────────────────────────────┤
-│  Student Name    │ Score  │ Feedback          │
-│─────────────────┼────────┼──────────────────│
-│  Ahmad           │ [85]   │ [Good work]       │
-│  Budi            │ [90]   │ [Excellent]       │
-│  Citra           │ [  ]   │ [  ]              │
-│  ...             │        │                   │
-├──────────────────────────────────────────────┤
-│                          [💾 Save All Grades] │
-└──────────────────────────────────────────────┘
-```
-
-### Technical Details
-- Use local state array `tableRows` with `{student_id, score, feedback}` per student
-- On "Save All": filter rows where score is non-empty, bulk insert via `supabase.from("manual_grades").upsert(...)` or insert multiple
-- No database changes needed — uses existing `manual_grades` table
-- Tabs component from shadcn for mode switching
-
-### Files
-| File | Change |
-|------|--------|
-| `src/pages/AdminManualGrades.tsx` | Add Tabs with Card View + Table Entry mode with editable spreadsheet table |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
