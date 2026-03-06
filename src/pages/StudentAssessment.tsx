@@ -148,13 +148,31 @@ const StudentAssessment = () => {
 
     try {
       // Upsert answers
-      const answerRows = questions.map((q) => ({
-        submission_id: submissionId,
-        question_id: q.id,
-        answer_text: answers[q.id] || "",
-        is_correct: q.correct_answer ? (answers[q.id] || "").trim().toLowerCase() === q.correct_answer.trim().toLowerCase() : null,
-        points: q.correct_answer && (answers[q.id] || "").trim().toLowerCase() === q.correct_answer.trim().toLowerCase() ? 1 : 0,
-      }));
+      const answerRows = questions.map((q) => {
+        const answer = answers[q.id] || "";
+        let isCorrect: boolean | null = null;
+        if (q.correct_answer) {
+          // Check if MCMA (correct_answer is a JSON array)
+          try {
+            const correctArr = JSON.parse(q.correct_answer);
+            if (Array.isArray(correctArr)) {
+              const selectedArr: string[] = (() => { try { return JSON.parse(answer); } catch { return []; } })();
+              isCorrect = correctArr.length === selectedArr.length && correctArr.every((c: string) => selectedArr.includes(c));
+            } else {
+              isCorrect = answer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
+            }
+          } catch {
+            isCorrect = answer.trim().toLowerCase() === q.correct_answer.trim().toLowerCase();
+          }
+        }
+        return {
+          submission_id: submissionId,
+          question_id: q.id,
+          answer_text: answer,
+          is_correct: isCorrect,
+          points: isCorrect ? 1 : 0,
+        };
+      });
 
       // Delete old answers and insert new
       await supabase.from("assessment_answers").delete().eq("submission_id", submissionId);
