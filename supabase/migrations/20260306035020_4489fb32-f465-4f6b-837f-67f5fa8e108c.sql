@@ -1,0 +1,1 @@
+ALTER TABLE public.assessments ADD COLUMN assessment_type text NOT NULL DEFAULT 'formative';
