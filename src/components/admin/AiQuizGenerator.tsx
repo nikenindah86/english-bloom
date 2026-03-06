@@ -27,7 +27,7 @@ const AiQuizGenerator = ({ onGenerated }: Props) => {
   const [topic, setTopic] = useState("");
   const [numQuestions, setNumQuestions] = useState("5");
   const [questionType, setQuestionType] = useState<"multiple_choice" | "text_input">("multiple_choice");
-  const [language, setLanguage] = useState("Indonesian");
+  
   const [generating, setGenerating] = useState(false);
 
   const handleGenerate = async () => {
