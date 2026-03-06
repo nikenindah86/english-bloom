@@ -6,6 +6,7 @@ import { Users, ClipboardList, FileText, Megaphone, GraduationCap, FileCheck, Ca
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { data: studentCount = 0 } = useQuery({
     queryKey: ["admin-student-count"],
     queryFn: async () => {
@@ -63,8 +64,37 @@ const AdminDashboard = () => {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h2 className="font-display font-bold text-2xl">Welcome back! 👋</h2>
+         <h2 className="font-display font-bold text-2xl">Welcome back! 👋</h2>
           <p className="text-muted-foreground mt-1">Here's your classroom overview</p>
+        </div>
+
+        {/* Mobile Icon Grid Menu */}
+        <div className="md:hidden">
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Classes", icon: GraduationCap, path: "/admin/classes", bg: "bg-accent" },
+              { label: "Students", icon: Users, path: "/admin/students", bg: "bg-secondary" },
+              { label: "Materials", icon: FileText, path: "/admin/materials", bg: "bg-blush" },
+              { label: "Quizzes", icon: ClipboardList, path: "/admin/quizzes", bg: "bg-lavender" },
+              { label: "Assignments", icon: FileCheck, path: "/admin/assignments", bg: "bg-accent" },
+              { label: "Schedule", icon: CalendarDays, path: "/admin/schedule", bg: "bg-secondary" },
+              { label: "Grading", icon: CheckSquare, path: "/admin/grading", bg: "bg-blush" },
+              { label: "Manual", icon: PenLine, path: "/admin/manual-grades", bg: "bg-lavender" },
+              { label: "Attendance", icon: CalendarCheck, path: "/admin/attendance", bg: "bg-accent" },
+              { label: "Notes", icon: StickyNote, path: "/admin/student-notes", bg: "bg-secondary" },
+            ].map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass hover:shadow-lg transition-all"
+              >
+                <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center`}>
+                  <item.icon className="w-5 h-5 text-foreground/70" />
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Stats grid */}
