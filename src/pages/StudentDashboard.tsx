@@ -5,7 +5,7 @@ import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal, FileText, Star, User, FileCheck, CalendarDays } from "lucide-react";
+import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal, FileText, Star, User, FileCheck, CalendarDays, PenTool } from "lucide-react";
 import { format } from "date-fns";
 
 type LeaderEntry = {
@@ -214,6 +214,7 @@ const StudentDashboard = () => {
             {[
               { label: "Materials", icon: FileText, path: "/student/materials", bg: "bg-accent" },
               { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes", bg: "bg-secondary" },
+              { label: "Tests", icon: PenTool, path: "/student/assessments", bg: "bg-lavender" },
               { label: "Assignments", icon: FileCheck, path: "/student/assignments", bg: "bg-blush" },
               { label: "Schedule", icon: CalendarDays, path: "/student/schedule", bg: "bg-lavender" },
               { label: "Grades", icon: Star, path: "/student/grades", bg: "bg-accent" },

@@ -23,6 +23,7 @@ import AdminAssignments from "./pages/AdminAssignments";
 import AdminSchedule from "./pages/AdminSchedule";
 import AdminStudentNotes from "./pages/AdminStudentNotes";
 import AdminLessonPlans from "./pages/AdminLessonPlans";
+import AdminAssessments from "./pages/AdminAssessments";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentMaterials from "./pages/StudentMaterials";
 import StudentQuizzes from "./pages/StudentQuizzes";
@@ -31,6 +32,8 @@ import StudentGrades from "./pages/StudentGrades";
 import StudentProfile from "./pages/StudentProfile";
 import StudentAssignments from "./pages/StudentAssignments";
 import StudentSchedule from "./pages/StudentSchedule";
+import StudentAssessments from "./pages/StudentAssessments";
+import StudentAssessment from "./pages/StudentAssessment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +64,7 @@ const App = () => (
             <Route path="/admin/schedule" element={<ProtectedRoute requiredRole="teacher"><AdminSchedule /></ProtectedRoute>} />
             <Route path="/admin/student-notes" element={<ProtectedRoute requiredRole="teacher"><AdminStudentNotes /></ProtectedRoute>} />
             <Route path="/admin/lesson-plans" element={<ProtectedRoute requiredRole="teacher"><AdminLessonPlans /></ProtectedRoute>} />
+            <Route path="/admin/assessments" element={<ProtectedRoute requiredRole="teacher"><AdminAssessments /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/materials" element={<ProtectedRoute requiredRole="student"><StudentMaterials /></ProtectedRoute>} />
             <Route path="/student/quizzes" element={<ProtectedRoute requiredRole="student"><StudentQuizzes /></ProtectedRoute>} />
@@ -69,6 +73,8 @@ const App = () => (
             <Route path="/student/profile" element={<ProtectedRoute requiredRole="student"><StudentProfile /></ProtectedRoute>} />
             <Route path="/student/assignments" element={<ProtectedRoute requiredRole="student"><StudentAssignments /></ProtectedRoute>} />
             <Route path="/student/schedule" element={<ProtectedRoute requiredRole="student"><StudentSchedule /></ProtectedRoute>} />
+            <Route path="/student/assessments" element={<ProtectedRoute requiredRole="student"><StudentAssessments /></ProtectedRoute>} />
+            <Route path="/student/assessment/:id" element={<ProtectedRoute requiredRole="student"><StudentAssessment /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
