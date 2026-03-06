@@ -230,6 +230,7 @@ export type Database = {
       }
       assessments: {
         Row: {
+          assessment_type: string
           class_id: string
           created_at: string
           description: string | null
@@ -239,6 +240,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          assessment_type?: string
           class_id: string
           created_at?: string
           description?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           title: string
         }
         Update: {
+          assessment_type?: string
           class_id?: string
           created_at?: string
           description?: string | null
