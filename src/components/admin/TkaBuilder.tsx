@@ -49,7 +49,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
   const [formBentuk, setFormBentuk] = useState<BentukSoal>("pg");
   const [formNumOptions, setFormNumOptions] = useState<4 | 5>(5);
   const [formNumQuestions, setFormNumQuestions] = useState(5);
-  const [formKompetensi, setFormKompetensi] = useState(TKA_FRAMEWORK.kompetensi[0].name);
+  const [formKompetensi, setFormKompetensi] = useState<string>(TKA_FRAMEWORK.kompetensi[0].name);
   const [formSubkompetensi, setFormSubkompetensi] = useState<string[]>([]);
   const [formIncludePassage, setFormIncludePassage] = useState(true);
 
