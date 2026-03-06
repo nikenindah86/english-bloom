@@ -1,31 +1,46 @@
 
-Masalah yang terlihat dari codebase dan screenshot:
 
-1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
-   - `netlify.toml`
-   - `public/_redirects`
-2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
+## Plan: Link Assignments to Materials
 
-Rencana implementasi:
+### Concept
+Create a junction table `assignment_materials` to connect assignments with materials. When creating an assignment, teachers can:
+1. **Select existing materials** from the Materials library
+2. **Add a new link/file** which auto-creates a material entry (so it also appears in the Materials menu)
 
-1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
-2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
-3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
-4. Validasi routing React tetap benar dan tidak ubah struktur route existing
-5. Setelah deploy, verifikasi:
-   - buka `/` (cek tombol sudah besar di mobile)
-   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
+This makes both menus interconnected — materials added from assignments show up in Materials, and existing materials can be attached to assignments.
 
-File yang akan diubah:
+### Database Migration
 
-| File | Perubahan |
-|---|---|
-| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
-| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
-| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
+**New table: `assignment_materials`**
+```
+- id (uuid, PK)
+- assignment_id (uuid, FK → assignments)
+- material_id (uuid, FK → materials)
+- created_at (timestamptz)
+```
 
-Detail teknis:
+RLS: Teachers full access, students can view if they belong to the assignment's class.
 
-- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
-- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
-- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
+### UI Changes
+
+**`src/pages/AdminAssignments.tsx`** — New Assignment dialog additions:
+
+1. **"Attach Materials" section** below max score:
+   - Tabs: "Select Existing" | "Add New"
+   - **Select Existing**: Multi-select list of materials (filtered by selected class), with checkboxes
+   - **Add New**: Quick form — title, type (link/worksheet/tutorial), URL or file upload. On create, inserts into `materials` table first, then links via `assignment_materials`
+2. **Assignment cards**: Show attached material count badge
+3. **On create mutation**: After inserting assignment, insert `assignment_materials` rows for selected/new materials
+
+**`src/pages/AdminMaterials.tsx`** — No changes needed (materials created from assignments auto-appear here)
+
+**Student assignment view** (`StudentAssignments.tsx`): Show linked materials with download/open links
+
+### Files
+
+| File | Change |
+|------|--------|
+| Migration | Create `assignment_materials` table with RLS |
+| `src/pages/AdminAssignments.tsx` | Add material attachment UI in create dialog, show material badges on cards |
+| `src/pages/StudentAssignments.tsx` | Display linked materials for each assignment |
+
