@@ -56,9 +56,13 @@ const StudentQuizzes = () => {
           <div className="space-y-3">
             {quizzes.map((q) => {
               const done = submittedIds.has(q.id);
+              const now = new Date();
+              const isUpcoming = q.scheduled_at && new Date(q.scheduled_at) > now;
+              const isExpired = q.expires_at && new Date(q.expires_at) < now;
+              const isDisabled = isUpcoming || (isExpired && !done);
               return (
-                <button key={q.id} onClick={() => navigate(`/student/quiz/${q.id}`)} className="glass rounded-2xl p-4 w-full text-left flex items-center gap-3 hover:shadow-lg transition-shadow">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? "bg-secondary" : "bg-lavender"}`}>
+                <button key={q.id} onClick={() => !isDisabled && navigate(`/student/quiz/${q.id}`)} disabled={!!isDisabled} className={`glass rounded-2xl p-4 w-full text-left flex items-center gap-3 transition-shadow ${isDisabled ? "opacity-60 cursor-not-allowed" : "hover:shadow-lg"}`}>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? "bg-secondary" : isExpired ? "bg-destructive/10" : "bg-lavender"}`}>
                     {done ? <CheckCircle className="w-5 h-5 text-secondary-foreground" /> : <ClipboardList className="w-5 h-5 text-plum" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -73,9 +77,13 @@ const StudentQuizzes = () => {
                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Trophy className="w-3 h-3" /> {q.points_per_question || 100}pts
                       </span>
+                      {isUpcoming && <span className="text-[10px] text-amber-500 font-medium">🔒 Opens {new Date(q.scheduled_at).toLocaleString()}</span>}
+                      {isExpired && !done && <span className="text-[10px] text-destructive font-medium">⏰ Expired</span>}
                     </div>
                   </div>
-                  <Badge variant={done ? "secondary" : "default"} className="text-[10px] shrink-0">{done ? "Done" : "Start"}</Badge>
+                  <Badge variant={done ? "secondary" : isExpired ? "destructive" : isUpcoming ? "outline" : "default"} className="text-[10px] shrink-0">
+                    {done ? "Done" : isExpired ? "Expired" : isUpcoming ? "Upcoming" : "Start"}
+                  </Badge>
                 </button>
               );
             })}

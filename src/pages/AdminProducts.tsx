@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ExternalLink, ShoppingBag } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, ShoppingBag, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Product = {
@@ -190,8 +190,29 @@ const AdminProducts = () => {
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
             </div>
             <div className="space-y-2">
-              <Label>Thumbnail URL</Label>
-              <Input value={form.thumbnail_url} onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })} placeholder="https://..." />
+              <Label>Thumbnail</Label>
+              <div className="flex gap-2">
+                <Input value={form.thumbnail_url} onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })} placeholder="URL atau upload file..." className="flex-1" />
+                <label className="shrink-0">
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const ext = file.name.split(".").pop();
+                    const path = `product-thumbnails/${Date.now()}.${ext}`;
+                    const { error } = await supabase.storage.from("materials").upload(path, file);
+                    if (error) { toast.error("Upload gagal"); return; }
+                    const { data: urlData } = supabase.storage.from("materials").getPublicUrl(path);
+                    setForm(prev => ({ ...prev, thumbnail_url: urlData.publicUrl }));
+                    toast.success("Thumbnail diupload!");
+                  }} />
+                  <span className="inline-flex items-center gap-1 px-3 py-2 text-sm border rounded-md cursor-pointer hover:bg-muted transition-colors">
+                    <Upload className="w-4 h-4" /> Upload
+                  </span>
+                </label>
+              </div>
+              {form.thumbnail_url && (
+                <img src={form.thumbnail_url} alt="Preview" className="w-full h-32 object-cover rounded-lg border" />
+              )}
             </div>
             <div className="space-y-2">
               <Label>Harga (0 = Gratis)</Label>

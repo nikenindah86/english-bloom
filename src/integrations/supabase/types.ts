@@ -303,8 +303,10 @@ export type Database = {
           created_at: string
           description: string | null
           duration_minutes: number
+          expires_at: string | null
           id: string
           is_active: boolean
+          scheduled_at: string | null
           title: string
         }
         Insert: {
@@ -313,8 +315,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number
+          expires_at?: string | null
           id?: string
           is_active?: boolean
+          scheduled_at?: string | null
           title: string
         }
         Update: {
@@ -323,8 +327,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number
+          expires_at?: string | null
           id?: string
           is_active?: boolean
+          scheduled_at?: string | null
           title?: string
         }
         Relationships: [
@@ -423,8 +429,10 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          expires_at: string | null
           id: string
           max_score: number
+          scheduled_at: string | null
           title: string
         }
         Insert: {
@@ -432,8 +440,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          expires_at?: string | null
           id?: string
           max_score?: number
+          scheduled_at?: string | null
           title: string
         }
         Update: {
@@ -441,8 +451,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          expires_at?: string | null
           id?: string
           max_score?: number
+          scheduled_at?: string | null
           title?: string
         }
         Relationships: [
@@ -1095,9 +1107,11 @@ export type Database = {
           class_id: string | null
           created_at: string
           description: string | null
+          expires_at: string | null
           id: string
           is_active: boolean
           points_per_question: number
+          scheduled_at: string | null
           show_answers_after: boolean
           shuffle_options: boolean
           shuffle_questions: boolean
@@ -1108,9 +1122,11 @@ export type Database = {
           class_id?: string | null
           created_at?: string
           description?: string | null
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           points_per_question?: number
+          scheduled_at?: string | null
           show_answers_after?: boolean
           shuffle_options?: boolean
           shuffle_questions?: boolean
@@ -1121,9 +1137,11 @@ export type Database = {
           class_id?: string | null
           created_at?: string
           description?: string | null
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           points_per_question?: number
+          scheduled_at?: string | null
           show_answers_after?: boolean
           shuffle_options?: boolean
           shuffle_questions?: boolean

@@ -58,6 +58,8 @@ const AdminQuizzes = () => {
   const [pointsPerQuestion, setPointsPerQuestion] = useState("100");
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion(0)]);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
 
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
@@ -85,14 +87,17 @@ const AdminQuizzes = () => {
   const openCreate = () => {
     setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId("");
     setTimeLimit(""); setShowAnswersAfter(true); setShuffleQuestions(false); setShuffleOptions(false); setPointsPerQuestion("100");
+    setScheduledAt(""); setExpiresAt("");
     setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
-  const openEdit = async (quiz: Quiz & { time_limit?: number; show_answers_after?: boolean; shuffle_questions?: boolean; shuffle_options?: boolean; points_per_question?: number }) => {
+  const openEdit = async (quiz: Quiz & { time_limit?: number; show_answers_after?: boolean; shuffle_questions?: boolean; shuffle_options?: boolean; points_per_question?: number; scheduled_at?: string | null; expires_at?: string | null }) => {
     setEditingQuizId(quiz.id); setTitle(quiz.title); setDescription(quiz.description || ""); setIsActive(quiz.is_active); setClassId(quiz.class_id || "");
     setTimeLimit(quiz.time_limit?.toString() || ""); setShowAnswersAfter(quiz.show_answers_after ?? true);
     setShuffleQuestions(quiz.shuffle_questions ?? false); setShuffleOptions(quiz.shuffle_options ?? false);
     setPointsPerQuestion((quiz.points_per_question ?? 100).toString());
+    setScheduledAt(quiz.scheduled_at ? new Date(quiz.scheduled_at).toISOString().slice(0, 16) : "");
+    setExpiresAt(quiz.expires_at ? new Date(quiz.expires_at).toISOString().slice(0, 16) : "");
     const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
     if (data && data.length > 0) {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
@@ -119,6 +124,8 @@ const AdminQuizzes = () => {
           time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
           shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
           points_per_question: parseInt(pointsPerQuestion) || 100,
+          scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         }).eq("id", editingQuizId);
         await supabase.from("quiz_questions").delete().eq("quiz_id", editingQuizId);
       } else {
@@ -127,6 +134,8 @@ const AdminQuizzes = () => {
           time_limit: timeLimit ? parseInt(timeLimit) : null, show_answers_after: showAnswersAfter,
           shuffle_questions: shuffleQuestions, shuffle_options: shuffleOptions,
           points_per_question: parseInt(pointsPerQuestion) || 100,
+          scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
         }).select().single();
         quizId = data!.id;
       }
@@ -172,6 +181,10 @@ const AdminQuizzes = () => {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{quiz.question_count} question{quiz.question_count !== 1 ? "s" : ""}</p>
+                  <div className="flex gap-1 flex-wrap mt-0.5">
+                    {(quiz as any).scheduled_at && <Badge variant="outline" className="text-[9px]">📅 {new Date((quiz as any).scheduled_at).toLocaleDateString()}</Badge>}
+                    {(quiz as any).expires_at && <Badge variant={new Date((quiz as any).expires_at) < new Date() ? "destructive" : "outline"} className="text-[9px]">⏰ {new Date((quiz as any).expires_at).toLocaleDateString()}</Badge>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <Switch checked={quiz.is_active} onCheckedChange={() => toggleActive(quiz)} />
@@ -201,6 +214,21 @@ const AdminQuizzes = () => {
               </Select>
             </div>
             <div className="flex items-center gap-2"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>Active (visible to students)</Label></div>
+
+            {/* Scheduling */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <h4 className="font-semibold text-sm">📅 Scheduling</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Scheduled At (optional)</Label>
+                  <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Expires At (optional)</Label>
+                  <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-8 text-xs" />
+                </div>
+              </div>
+            </div>
 
             {/* Gamification Settings */}
             <div className="border-t border-border pt-4 space-y-3">

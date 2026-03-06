@@ -248,6 +248,10 @@ const StudentQuiz = () => {
     );
   }
 
+  // Check expiry
+  const isExpired = quiz?.expires_at && new Date(quiz.expires_at) < new Date();
+  const isUpcoming = quiz?.scheduled_at && new Date(quiz.scheduled_at) > new Date();
+
   if (alreadySubmitted) {
     return (
       <StudentLayout>
@@ -256,6 +260,32 @@ const StudentQuiz = () => {
           <h2 className="font-display font-bold text-lg">Already Submitted</h2>
           <p className="text-sm text-muted-foreground">You've already completed this quiz.</p>
           <Button onClick={() => navigate("/student/grades")} className="rounded-xl mt-2">View Grades</Button>
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <StudentLayout>
+        <div className="glass rounded-2xl p-8 text-center space-y-3">
+          <Clock className="w-12 h-12 mx-auto text-destructive" />
+          <h2 className="font-display font-bold text-lg">Quiz Expired</h2>
+          <p className="text-sm text-muted-foreground">This quiz is no longer available.</p>
+          <Button onClick={() => navigate("/student/quizzes")} className="rounded-xl mt-2">Back to Quizzes</Button>
+        </div>
+      </StudentLayout>
+    );
+  }
+
+  if (isUpcoming) {
+    return (
+      <StudentLayout>
+        <div className="glass rounded-2xl p-8 text-center space-y-3">
+          <Clock className="w-12 h-12 mx-auto text-amber-500" />
+          <h2 className="font-display font-bold text-lg">Quiz Not Yet Available</h2>
+          <p className="text-sm text-muted-foreground">Opens at {new Date(quiz.scheduled_at).toLocaleString()}</p>
+          <Button onClick={() => navigate("/student/quizzes")} className="rounded-xl mt-2">Back to Quizzes</Button>
         </div>
       </StudentLayout>
     );

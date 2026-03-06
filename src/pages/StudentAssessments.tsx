@@ -5,7 +5,7 @@ import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileCheck, Clock, Loader2 } from "lucide-react";
+import { FileCheck, Clock, Loader2, Lock } from "lucide-react";
 
 type AssessmentItem = {
   id: string;
@@ -16,6 +16,8 @@ type AssessmentItem = {
   status: "not_started" | "in_progress" | "submitted";
   score?: number | null;
   purpose?: string | null;
+  scheduled_at?: string | null;
+  expires_at?: string | null;
 };
 
 const StudentAssessments = () => {
@@ -76,7 +78,7 @@ const StudentAssessments = () => {
 
       const { data: assessments } = await supabase
         .from("assessments")
-        .select("id, title, description, duration_minutes")
+        .select("id, title, description, duration_minutes, scheduled_at, expires_at")
         .eq("is_active", true)
         .in("id", allIds);
 
@@ -97,7 +99,7 @@ const StudentAssessments = () => {
       const subMap: Record<string, { status: string; score: number | null }> = {};
       subs?.forEach((s) => { subMap[s.assessment_id] = { status: s.status, score: s.score }; });
 
-      setItems(assessments.map((a) => ({
+      setItems(assessments.map((a: any) => ({
         id: a.id,
         title: a.title,
         description: a.description,
@@ -110,6 +112,8 @@ const StudentAssessments = () => {
             : "not_started",
         score: subMap[a.id]?.score,
         purpose: studentAssignMap[a.id] || null,
+        scheduled_at: a.scheduled_at,
+        expires_at: a.expires_at,
       })));
       setLoading(false);
     };
@@ -133,35 +137,42 @@ const StudentAssessments = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {items.map((item) => (
-              <div key={item.id} className="glass rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold truncate">{item.title}</h3>
-                      <Badge variant={item.status === "submitted" ? "default" : item.status === "in_progress" ? "secondary" : "outline"} className="text-[10px]">
-                        {item.status === "submitted" ? (item.score !== null ? `Score: ${item.score}` : "Submitted") : item.status === "in_progress" ? "In Progress" : "Not Started"}
-                      </Badge>
-                      {item.purpose && (
-                        <Badge variant="secondary" className="text-[10px] capitalize">{item.purpose}</Badge>
-                      )}
+            {items.map((item) => {
+              const now = new Date();
+              const isUpcoming = item.scheduled_at && new Date(item.scheduled_at) > now;
+              const isExpired = item.expires_at && new Date(item.expires_at) < now;
+              return (
+                <div key={item.id} className={`glass rounded-2xl p-4 space-y-3 ${isExpired && item.status !== "submitted" ? "opacity-60" : ""}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold truncate">{item.title}</h3>
+                        <Badge variant={item.status === "submitted" ? "default" : item.status === "in_progress" ? "secondary" : "outline"} className="text-[10px]">
+                          {item.status === "submitted" ? (item.score !== null ? `Score: ${item.score}` : "Submitted") : item.status === "in_progress" ? "In Progress" : "Not Started"}
+                        </Badge>
+                        {item.purpose && (
+                          <Badge variant="secondary" className="text-[10px] capitalize">{item.purpose}</Badge>
+                        )}
+                        {isExpired && item.status !== "submitted" && <Badge variant="destructive" className="text-[10px]">⏰ Expired</Badge>}
+                        {isUpcoming && <Badge variant="outline" className="text-[10px]">🔒 Opens {new Date(item.scheduled_at!).toLocaleString()}</Badge>}
+                      </div>
+                      {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
                     </div>
-                    {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {item.duration_minutes} min</span>
+                      <span>{item.question_count} questions</span>
+                    </div>
+                    {item.status !== "submitted" && !isExpired && !isUpcoming && (
+                      <Button size="sm" className="rounded-xl text-xs" onClick={() => navigate(`/student/assessment/${item.id}`)}>
+                        {item.status === "in_progress" ? "Continue" : "Start Test"}
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {item.duration_minutes} min</span>
-                    <span>{item.question_count} questions</span>
-                  </div>
-                  {item.status !== "submitted" && (
-                    <Button size="sm" className="rounded-xl text-xs" onClick={() => navigate(`/student/assessment/${item.id}`)}>
-                      {item.status === "in_progress" ? "Continue" : "Start Test"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
