@@ -280,6 +280,41 @@ export type Database = {
         }
         Relationships: []
       }
+      grade_categories: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          max_score: number
+          name: string
+          order_index: number
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          max_score?: number
+          name: string
+          order_index?: number
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          max_score?: number
+          name?: string
+          order_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_categories_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_grades: {
         Row: {
           class_id: string | null
