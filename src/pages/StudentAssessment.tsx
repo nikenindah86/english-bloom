@@ -64,8 +64,8 @@ const StudentAssessment = () => {
 
       if (!a) { navigate("/student/assessments"); return; }
       setAssessment(a);
-      setSections(secs || []);
-      setQuestions(qs || []);
+      setSections((secs || []).map((s: any) => ({ id: s.id, title: s.title, question_type: s.question_type, reading_passage: s.reading_passage, order_index: s.order_index })));
+      setQuestions((qs || []).map((q: any) => ({ id: q.id, section_id: q.section_id, question_text: q.question_text, options: q.options as string[] | null, correct_answer: q.correct_answer, difficulty: q.difficulty, cognitive_level: q.cognitive_level, order_index: q.order_index })));
       setTimeLeft(a.duration_minutes * 60);
 
       // Check existing submission
