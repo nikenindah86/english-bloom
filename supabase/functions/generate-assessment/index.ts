@@ -95,14 +95,32 @@ serve(async (req) => {
 
     // Mode: generate reading passage only
     if (generate_passage) {
-      const passagePrompt = `Generate a reading passage about "${topic}" suitable for an English language assessment.
-The passage should be 150-300 words, well-structured with clear paragraphs, educational, and appropriate for high school or university students.
-${question_type === "true_false_statement" ? "The passage should contain enough factual details to support true/false statement questions." : ""}
+      const topicLower = topic.toLowerCase();
+      const genreMap: Record<string, string> = {
+        "narrative": "Write a short story (fable, myth, legend, or folktale) with Orientation (characters, setting, time), Complication (conflict/problem), and Resolution. Include a moral lesson. Do NOT explain what narrative text is.",
+        "procedure": "Write a procedure text with a clear Goal/Title, a list of Materials/Ingredients, and numbered Steps explaining how to do or make something. Do NOT explain what procedure text is.",
+        "descriptive": "Write a descriptive text about a specific person, place, or thing with vivid sensory details, using Identification and Description structure. Do NOT explain what descriptive text is.",
+        "recount": "Write a recount of a past experience or event with Orientation, a sequence of Events in chronological order, and Re-orientation. Do NOT explain what recount text is.",
+        "analytical exposition": "Write an argumentative text with a clear Thesis statement, supporting Arguments with evidence, and a Reiteration/conclusion. Do NOT explain what analytical exposition is.",
+        "hortatory exposition": "Write a persuasive text with a Thesis, Arguments, and a Recommendation urging the reader to take action. Do NOT explain what hortatory exposition is.",
+        "exposition": "Write an argumentative or persuasive text with a Thesis, Arguments, and Conclusion/Recommendation. Do NOT explain what exposition text is.",
+        "explanation": "Write an explanation text describing how a natural or social process works, with a General Statement, step-by-step Explanation of the process, and a Conclusion. Do NOT explain what explanation text is.",
+        "discussion": "Write a discussion text presenting two sides (pro and contra) of an issue, with Issue introduction, Arguments For, Arguments Against, and a balanced Conclusion. Do NOT explain what discussion text is.",
+        "review": "Write a review of a book, film, or product with Identification (title, author/creator), Evaluation (strengths/weaknesses), and Interpretation/recommendation. Do NOT explain what review text is.",
+        "news item": "Write a news article about an event with a Headline-worthy opening paragraph (newsworthy summary), Background events in detail, and Source/context. Do NOT explain what news item text is.",
+      };
 
-Return a JSON object with this exact structure:
-{
-  "reading_passage": "the full passage text here"
-}`;
+      let genreInstruction = "";
+      for (const [keyword, instruction] of Object.entries(genreMap)) {
+        if (topicLower.includes(keyword)) {
+          genreInstruction = instruction;
+          break;
+        }
+      }
+
+      const passagePrompt = genreInstruction
+        ? `${genreInstruction}\n\nTopic/theme: "${topic}".\nThe text should be 150-300 words, in English, well-structured with clear paragraphs, and appropriate for Indonesian high school students (SMA).\n${question_type === "true_false_statement" ? "Include enough specific factual details to support true/false statement questions.\n" : ""}\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`
+        : `Generate a reading passage about "${topic}" suitable for an English language assessment.\nThe passage should be 150-300 words, well-structured with clear paragraphs, educational, and appropriate for high school students.\n${question_type === "true_false_statement" ? "The passage should contain enough factual details to support true/false statement questions.\n" : ""}\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`;
 
       for (const keyRow of keys) {
         for (const model of MODELS) {
