@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck, Upload } from "lucide-react";
+import { FileCheck, Upload, Paperclip, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -46,6 +46,24 @@ const StudentAssignments = () => {
     },
     enabled: !!user,
   });
+
+  // Fetch linked materials for all assignments
+  const assignmentIds = assignments.map((a: any) => a.id);
+  const { data: assignmentMaterials = [] } = useQuery({
+    queryKey: ["assignment-materials", assignmentIds],
+    queryFn: async () => {
+      if (assignmentIds.length === 0) return [];
+      const { data } = await supabase
+        .from("assignment_materials")
+        .select("assignment_id, materials(id, title, type, file_url)")
+        .in("assignment_id", assignmentIds);
+      return data || [];
+    },
+    enabled: assignmentIds.length > 0,
+  });
+
+  const getMaterials = (assignmentId: string) =>
+    assignmentMaterials.filter((am: any) => am.assignment_id === assignmentId).map((am: any) => am.materials).filter(Boolean);
 
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -96,6 +114,7 @@ const StudentAssignments = () => {
             {assignments.map((a: any) => {
               const sub = getSubmission(a.id);
               const isOverdue = a.due_date && new Date(a.due_date) < new Date() && !sub;
+              const materials = getMaterials(a.id);
               return (
                 <div key={a.id} className={`glass rounded-2xl p-4 space-y-2 ${isOverdue ? "border border-destructive/30" : ""}`}>
                   <div className="flex items-start justify-between gap-2">
@@ -113,7 +132,7 @@ const StudentAssignments = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     {a.due_date && (
                       <Badge variant={isOverdue ? "destructive" : "outline"} className="text-[10px]">
                         Due: {format(new Date(a.due_date), "MMM d, yyyy")}
@@ -121,6 +140,28 @@ const StudentAssignments = () => {
                     )}
                     <Badge variant="secondary" className="text-[10px]">Max: {a.max_score}</Badge>
                   </div>
+                  {/* Linked Materials */}
+                  {materials.length > 0 && (
+                    <div className="space-y-1 pt-1">
+                      <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                        <Paperclip className="w-3 h-3" /> Materials
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {materials.map((m: any) => (
+                          <a
+                            key={m.id}
+                            href={m.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline bg-primary/5 rounded-lg px-2 py-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {m.title}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {sub?.feedback && <p className="text-xs text-primary italic">Feedback: {sub.feedback}</p>}
                 </div>
               );
