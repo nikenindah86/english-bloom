@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
-import { BookOpen, LogOut, Home, FileText, ClipboardList, Star, User, FileCheck, CalendarDays } from "lucide-react";
+import { BookOpen, LogOut, Home, FileText, ClipboardList, Star, User, FileCheck, CalendarDays, PenTool } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -14,6 +14,7 @@ const navItems = [
   { label: "Home", icon: Home, path: "/student" },
   { label: "Materials", icon: FileText, path: "/student/materials" },
   { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes" },
+  { label: "Tests", icon: PenTool, path: "/student/assessments" },
   { label: "Assignments", icon: FileCheck, path: "/student/assignments" },
   { label: "Schedule", icon: CalendarDays, path: "/student/schedule" },
   { label: "Grades", icon: Star, path: "/student/grades" },
