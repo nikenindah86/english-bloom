@@ -1,25 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Download, BookOpen } from "lucide-react";
+import { FileText, Download, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
+
+const ITEMS_PER_PAGE = 10;
 
 const StudentMaterials = () => {
   const { user } = useAuth();
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterType, setFilterType] = useState("all");
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      // Get student's class_id
       const { data: profile } = await supabase.from("profiles").select("class_id").eq("id", user.id).single();
       const classId = profile?.class_id;
-
-      // Fetch materials: show those matching student's class OR with no class assigned
       let query = supabase.from("materials").select("*").order("created_at", { ascending: false });
       if (classId) {
         query = query.or(`class_id.eq.${classId},class_id.is.null`);
@@ -33,6 +39,28 @@ const StudentMaterials = () => {
     load();
   }, [user]);
 
+  const types = useMemo(() => [...new Set(materials.map((m) => m.type).filter(Boolean))], [materials]);
+
+  const filtered = useMemo(() => {
+    let result = materials.filter((m) => {
+      const matchSearch = !search || m.title?.toLowerCase().includes(search.toLowerCase()) || m.description?.toLowerCase().includes(search.toLowerCase());
+      const matchType = filterType === "all" || m.type === filterType;
+      return matchSearch && matchType;
+    });
+    result.sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortBy === "oldest") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
+      return 0;
+    });
+    return result;
+  }, [materials, search, sortBy, filterType]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  useEffect(() => { setPage(1); }, [search, sortBy, filterType]);
+
   return (
     <StudentLayout>
       <div className="space-y-6">
@@ -41,16 +69,38 @@ const StudentMaterials = () => {
           <p className="text-muted-foreground mt-1">Worksheets & tutorials from your teacher</p>
         </div>
 
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search materials..." className="pl-9 rounded-xl text-sm" />
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-36 rounded-xl text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest</SelectItem>
+              <SelectItem value="oldest">Oldest</SelectItem>
+              <SelectItem value="title">Title A-Z</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-full sm:w-36 rounded-xl text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {types.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
         {loading ? (
           <div className="space-y-3">{[1, 2, 3].map((i) => (<div key={i} className="glass rounded-2xl p-5 h-24 animate-pulse" />))}</div>
-        ) : materials.length === 0 ? (
+        ) : paginated.length === 0 ? (
           <div className="glass rounded-2xl p-8 text-center space-y-2">
             <BookOpen className="w-10 h-10 mx-auto text-muted-foreground/40" />
-            <p className="text-muted-foreground font-medium">No materials uploaded yet</p>
+            <p className="text-muted-foreground font-medium">{search || filterType !== "all" ? "No materials match your filter" : "No materials uploaded yet"}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {materials.map((m) => (
+            {paginated.map((m) => (
               <div key={m.id} className="glass rounded-2xl p-5 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 min-w-0">
@@ -72,6 +122,18 @@ const StudentMaterials = () => {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+              <ChevronLeft className="w-3.5 h-3.5" /> Previous
+            </Button>
+            <span className="text-xs text-muted-foreground">{page} / {totalPages}</span>
+            <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+              Next <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
           </div>
         )}
       </div>

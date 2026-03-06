@@ -1,42 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Fix Topic Input + Add Search/Pagination/Filter to Student Pages
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### 1. Fix AI Quiz Generator Topic Input
+Rencana implementasi:
 
-**File**: `src/components/admin/AiQuizGenerator.tsx`
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-The topic field uses `<Input>` (single line). Change to `<Textarea>` with `rows={2}` and allow it to expand, so teachers can enter longer topics/subjects.
+File yang akan diubah:
 
-### 2. Add Search, Pagination, and Sort/Filter to Student Pages
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-Apply a consistent pattern across all student listing pages: a search bar, sort dropdown, and pagination controls (e.g., 10 items per page).
+Detail teknis:
 
-**Pages to update:**
-
-| Page | Search by | Sort options | Filter options |
-|------|-----------|-------------|----------------|
-| `StudentQuizzes.tsx` | Title, description | Date (newest/oldest), Status (done/pending) | Status: All / Done / Pending / Expired |
-| `StudentAssignments.tsx` | Title, description | Due date, Status | Status: All / Submitted / Pending / Expired |
-| `StudentMaterials.tsx` | Title, description | Date (newest/oldest), Type | Type filter (from material types) |
-| `StudentAssessments.tsx` | Title, description | Date, Status | Status: All / Submitted / Not Started / Expired |
-| `StudentCourses.tsx` | Title, description | Progress, Title | Status: All / Completed / In Progress |
-
-**Pattern per page:**
-- Search `<Input>` with search icon at top
-- Sort `<Select>` dropdown (newest first default)
-- Filter `<Select>` for status/type
-- Client-side pagination: 10 items per page, Previous/Next buttons with page indicator
-- All filtering/sorting is client-side since data volumes are small
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `src/components/admin/AiQuizGenerator.tsx` | Change topic `Input` → `Textarea` |
-| `src/pages/StudentQuizzes.tsx` | Add search, sort, filter, pagination |
-| `src/pages/StudentAssignments.tsx` | Add search, sort, filter, pagination |
-| `src/pages/StudentMaterials.tsx` | Add search, sort, filter, pagination |
-| `src/pages/StudentAssessments.tsx` | Add search, sort, filter, pagination |
-| `src/pages/StudentCourses.tsx` | Add search, sort, filter, pagination |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
