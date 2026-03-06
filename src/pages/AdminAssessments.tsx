@@ -63,7 +63,9 @@ type Assessment = {
 
 const QUESTION_TYPES = [
   { value: "multiple_choice", label: "Multiple Choice" },
+  { value: "mcma", label: "Multiple Choice (Multiple Answer)" },
   { value: "true_false", label: "True / False" },
+  { value: "true_false_statement", label: "True / False (Statement Table)" },
   { value: "short_answer", label: "Short Answer" },
   { value: "essay", label: "Essay" },
 ];
@@ -96,11 +98,13 @@ const AdminAssessments = () => {
 
   // Step 1 fields
   const [title, setTitle] = useState("");
+  const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [classId, setClassId] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
 
   // Step 2 fields
+  const [generatingPassage, setGeneratingPassage] = useState(false);
   const [sections, setSections] = useState<SectionDraft[]>([emptySectionDraft(0)]);
   const [currentSectionIdx, setCurrentSectionIdx] = useState(0);
 
@@ -138,7 +142,7 @@ const AdminAssessments = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setTitle(""); setDescription(""); setClassId(""); setDurationMinutes("60");
+    setTitle(""); setTopic(""); setDescription(""); setClassId(""); setDurationMinutes("60");
     setSections([emptySectionDraft(0)]);
     setCurrentSectionIdx(0);
     setSectionQuestions({});
@@ -230,17 +234,45 @@ const AdminAssessments = () => {
     }));
   };
 
+  const handleGeneratePassage = async (sectionIdx: number) => {
+    const topicText = topic.trim() || title.trim();
+    if (!topicText) {
+      toast({ title: "Please set a topic or title first", variant: "destructive" });
+      return;
+    }
+    setGeneratingPassage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-assessment", {
+        body: {
+          topic: topicText,
+          generate_passage: true,
+          question_type: sections[sectionIdx].question_type,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.reading_passage) {
+        updateSection(sectionIdx, "reading_passage", data.reading_passage);
+        toast({ title: "Reading passage generated!" });
+      }
+    } catch (e: any) {
+      toast({ title: "Passage generation failed", description: e.message, variant: "destructive" });
+    }
+    setGeneratingPassage(false);
+  };
+
   const handleAiGenerate = async (sectionIdx: number) => {
     const sec = sections[sectionIdx];
-    if (!title.trim()) {
-      toast({ title: "Please set an assessment title first", variant: "destructive" });
+    const topicText = topic.trim() || title.trim();
+    if (!topicText) {
+      toast({ title: "Please set a topic or title first", variant: "destructive" });
       return;
     }
     setGeneratingSection(sectionIdx);
     try {
       const { data, error } = await supabase.functions.invoke("generate-assessment", {
         body: {
-          topic: title,
+          topic: topicText,
           question_type: sec.question_type,
           num_questions: sec.num_questions,
           difficulty_distribution: {
@@ -432,6 +464,7 @@ const AdminAssessments = () => {
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-2"><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. English Mid-Term Test" /></div>
+              <div className="space-y-2"><Label>Topic / Exam Material</Label><Textarea value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Present Perfect Tense - Reading Comprehension, Narrative Text, etc." rows={3} /><p className="text-[10px] text-muted-foreground">This topic will be used by AI to generate questions and reading passages</p></div>
               <div className="space-y-2"><Label>Description (optional)</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description" rows={2} /></div>
               <div className="space-y-2">
                 <Label>Class</Label>
@@ -495,7 +528,13 @@ const AdminAssessments = () => {
                     <Label className="text-xs">Include Reading Passage</Label>
                   </div>
                   {currentSection.reading_passage && (
-                    <Textarea value={currentSection.reading_passage.trim()} onChange={(e) => updateSection(currentSectionIdx, "reading_passage", e.target.value)} placeholder="Paste reading passage here..." rows={4} className="text-xs" />
+                    <>
+                      <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1 w-full" onClick={() => handleGeneratePassage(currentSectionIdx)} disabled={generatingPassage}>
+                        {generatingPassage ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        Generate Passage with AI
+                      </Button>
+                      <Textarea value={currentSection.reading_passage.trim()} onChange={(e) => updateSection(currentSectionIdx, "reading_passage", e.target.value)} placeholder="Paste reading passage here or generate with AI..." rows={4} className="text-xs" />
+                    </>
                   )}
                 </div>
 
