@@ -80,6 +80,42 @@ export type Database = {
           },
         ]
       }
+      assessment_class_assignments: {
+        Row: {
+          assessment_id: string
+          class_id: string
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          assessment_id: string
+          class_id: string
+          created_at?: string | null
+          id?: string
+        }
+        Update: {
+          assessment_id?: string
+          class_id?: string
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_class_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_class_assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_questions: {
         Row: {
           assessment_id: string
@@ -187,6 +223,38 @@ export type Database = {
           },
         ]
       }
+      assessment_student_assignments: {
+        Row: {
+          assessment_id: string
+          created_at: string | null
+          id: string
+          purpose: string | null
+          student_id: string
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string | null
+          id?: string
+          purpose?: string | null
+          student_id: string
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string | null
+          id?: string
+          purpose?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_student_assignments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_submissions: {
         Row: {
           assessment_id: string
@@ -231,7 +299,7 @@ export type Database = {
       assessments: {
         Row: {
           assessment_type: string
-          class_id: string
+          class_id: string | null
           created_at: string
           description: string | null
           duration_minutes: number
@@ -241,7 +309,7 @@ export type Database = {
         }
         Insert: {
           assessment_type?: string
-          class_id: string
+          class_id?: string | null
           created_at?: string
           description?: string | null
           duration_minutes?: number
@@ -251,7 +319,7 @@ export type Database = {
         }
         Update: {
           assessment_type?: string
-          class_id?: string
+          class_id?: string | null
           created_at?: string
           description?: string | null
           duration_minutes?: number
