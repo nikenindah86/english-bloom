@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
-  BookOpen, LogOut, Home, Users, FileText, ClipboardList,
+  BookOpen, LogOut, Home, Users, FileText, ClipboardList, Megaphone,
   CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag,
 } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import {
 
 const mainItems = [
   { title: "Dashboard", url: "/admin", icon: Home },
+  { title: "Announcements", url: "/admin/announcements", icon: Megaphone },
 ];
 
 const academicItems = [

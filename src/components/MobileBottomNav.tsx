@@ -27,6 +27,7 @@ const adminMainNav: NavItem[] = [
 ];
 
 const adminMoreItems: NavItem[] = [
+  { label: "Announce", icon: Megaphone, path: "/admin/announcements" },
   { label: "Courses", icon: BookOpen, path: "/admin/courses" },
   { label: "Assessments", icon: FileCheck, path: "/admin/assessments" },
   { label: "Classes", icon: GraduationCap, path: "/admin/classes" },
