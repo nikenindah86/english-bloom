@@ -49,7 +49,7 @@ const AiQuizGenerator = ({ onGenerated }: Props) => {
             topic: topic.trim(),
             num_questions: parseInt(numQuestions),
             question_type: questionType,
-            language,
+            language: "English",
           }),
         }
       );
@@ -116,17 +116,6 @@ const AiQuizGenerator = ({ onGenerated }: Props) => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Bahasa</Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Indonesian">Bahasa Indonesia</SelectItem>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="Malay">Bahasa Melayu</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
