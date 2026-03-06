@@ -1,79 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Analisis UX: Sidebar vs Icon Grid Menu di Mobile
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Perbandingan
+Rencana implementasi:
 
-| Aspek | Sidebar (Sekarang) | Icon Grid (Shopee-style) |
-|-------|-------------------|------------------------|
-| Discoverability | Tersembunyi di balik hamburger menu, user harus tap dulu | Semua menu langsung terlihat, sangat discoverable |
-| Tap count | 2 tap (buka sidebar → pilih menu) | 1 tap langsung |
-| Visual appeal | Standar, kurang menarik di mobile | Lebih menarik dengan icon berwarna-warni |
-| Cocok untuk | App dengan banyak menu (10+) | App dengan 7-12 menu, pas untuk LMS ini |
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-### Rekomendasi UX
+File yang akan diubah:
 
-Pendekatan **hybrid** yang paling optimal untuk LMS ini:
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-1. **Desktop**: Tetap pakai sidebar (sudah bagus)
-2. **Mobile**: Ganti sidebar dengan **icon grid menu di halaman Dashboard** + **bottom tab bar** untuk navigasi utama
+Detail teknis:
 
-Kenapa bukan murni Shopee-style? Karena Shopee adalah marketplace (browse-first), sedangkan LMS adalah task-oriented app. Jadi yang paling cocok:
-
-- **Dashboard** menampilkan icon grid seperti referensi (semua menu terlihat langsung)
-- **Bottom navigation bar** (fixed di bawah) dengan 4-5 menu utama untuk navigasi cepat antar halaman
-- Sidebar **dihilangkan di mobile view**
-
-### Rencana Implementasi
-
-#### 1. Bottom Navigation Bar (Mobile Only)
-Komponen baru `MobileBottomNav.tsx`:
-- Fixed di bawah layar, hanya muncul di `< 768px`
-- Student: Home, Materials, Quizzes, Grades, Profile (5 icon)
-- Admin: Dashboard, Students, Quizzes, Grading, More (5 icon, "More" buka sheet dengan menu lainnya)
-
-#### 2. Dashboard Icon Grid
-Update `StudentDashboard.tsx` dan `AdminDashboard.tsx`:
-- Tambahkan section icon grid di atas dashboard (mirip Shopee categories)
-- Setiap icon punya warna background pastel berbeda
-- Grid 4 kolom di mobile, icon + label
-
-#### 3. Hide Sidebar di Mobile
-Update `StudentLayout.tsx` dan `AdminLayout.tsx`:
-- Sidebar hanya render di `>= 768px`
-- SidebarTrigger (hamburger) dihilangkan di mobile
-- Header tetap ada untuk user info + logout
-
-### Files
-
-| File | Change |
-|------|--------|
-| `src/components/MobileBottomNav.tsx` | New: bottom tab bar component |
-| `src/components/student/StudentLayout.tsx` | Hide sidebar on mobile, add bottom nav |
-| `src/components/admin/AdminLayout.tsx` | Hide sidebar on mobile, add bottom nav |
-| `src/pages/StudentDashboard.tsx` | Add icon grid menu section |
-| `src/pages/AdminDashboard.tsx` | Add icon grid menu section |
-
-### UI Sketch (Mobile Dashboard)
-
-```text
-┌─────────────────────────┐
-│  🎓 Student Portal  🔔 │
-├─────────────────────────┤
-│                         │
-│  ┌──┐ ┌──┐ ┌──┐ ┌──┐  │
-│  │📚│ │📝│ │📋│ │📅│  │
-│  │Mat│ │Quiz││Asg│ │Sch│  │
-│  └──┘ └──┘ └──┘ └──┘  │
-│  ┌──┐ ┌──┐ ┌──┐       │
-│  │⭐│ │👤│ │🔔│        │
-│  │Grd│ │Pro│ │Not│       │
-│  └──┘ └──┘ └──┘       │
-│                         │
-│  [Dashboard content...] │
-│                         │
-├─────────────────────────┤
-│ 🏠  📚  📝  ⭐  👤    │  ← Bottom nav
-└─────────────────────────┘
-```
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
