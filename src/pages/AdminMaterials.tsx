@@ -176,7 +176,7 @@ const AdminMaterials = () => {
               <label className="text-sm font-medium">Title</label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Grammar Worksheet #1" className="rounded-xl" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Type</label>
                 <Select value={type} onValueChange={setType}>

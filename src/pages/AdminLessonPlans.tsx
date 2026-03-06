@@ -203,7 +203,7 @@ const AdminLessonPlans = () => {
 
         {/* Filter */}
         <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="w-48 rounded-xl">
+          <SelectTrigger className="w-full sm:w-48 rounded-xl">
             <SelectValue placeholder="All Classes" />
           </SelectTrigger>
           <SelectContent>
@@ -257,7 +257,7 @@ const AdminLessonPlans = () => {
           </DialogHeader>
           <div className="space-y-4">
             {/* Row 1 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Class *</Label>
                 <Select value={form.class_id} onValueChange={(v) => set("class_id", v)}>
@@ -282,7 +282,7 @@ const AdminLessonPlans = () => {
               <Label>Title *</Label>
               <Input className="rounded-xl" value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Week 3 – Present Perfect Tense" />
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <Label>Week #</Label>
                 <Input className="rounded-xl" type="number" value={form.week_number} onChange={(e) => set("week_number", e.target.value)} />

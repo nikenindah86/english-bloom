@@ -482,10 +482,10 @@ const AdminAssessments = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="font-display font-bold text-2xl">Assessments</h2>
-            <p className="text-muted-foreground mt-1">Create structured tests with AI-powered question generation</p>
+            <p className="text-muted-foreground mt-1 text-sm">Create structured tests with AI-powered question generation</p>
           </div>
           <div className="flex items-center gap-2">
             <ApiKeyManager />
@@ -493,15 +493,15 @@ const AdminAssessments = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="formative">Formative-Summative</TabsTrigger>
-              <TabsTrigger value="tka">TKA</TabsTrigger>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="formative" className="text-xs sm:text-sm">Formative</TabsTrigger>
+              <TabsTrigger value="tka" className="text-xs sm:text-sm">TKA</TabsTrigger>
             </TabsList>
             {activeTab === "formative" ? (
-              <Button onClick={openCreate} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New Assessment</Button>
+              <Button onClick={openCreate} className="rounded-xl gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> New Assessment</Button>
             ) : (
-              <Button onClick={() => setTkaDialogOpen(true)} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New TKA</Button>
+              <Button onClick={() => setTkaDialogOpen(true)} className="rounded-xl gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> New TKA</Button>
             )}
           </div>
 
@@ -572,7 +572,7 @@ const AdminAssessments = () => {
 
       {/* Formative Builder Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Assessment" : "Create Assessment"}</DialogTitle>
             <DialogDescription>
@@ -686,7 +686,7 @@ const AdminAssessments = () => {
                   <Input value={currentSection.title} onChange={(e) => updateSection(currentSectionIdx, "title", e.target.value)} className="h-8 text-sm" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label className="text-xs">Question Type</Label>
                     <Select value={currentSection.question_type} onValueChange={(v) => updateSection(currentSectionIdx, "question_type", v)}>
@@ -833,7 +833,7 @@ const AdminAssessments = () => {
 
       {/* TKA Builder Dialog */}
       <Dialog open={tkaDialogOpen} onOpenChange={setTkaDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader>
             <DialogTitle>Buat Assessment TKA</DialogTitle>
             <DialogDescription>
