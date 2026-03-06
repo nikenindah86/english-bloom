@@ -35,6 +35,237 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          id: string
+          is_correct: boolean | null
+          points: number
+          question_id: string
+          submission_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          points?: number
+          question_id: string
+          submission_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          points?: number
+          question_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_questions: {
+        Row: {
+          assessment_id: string
+          cognitive_level: string
+          correct_answer: string | null
+          created_at: string
+          difficulty: string
+          id: string
+          options: Json | null
+          order_index: number
+          question_text: string
+          section_id: string
+        }
+        Insert: {
+          assessment_id: string
+          cognitive_level?: string
+          correct_answer?: string | null
+          created_at?: string
+          difficulty?: string
+          id?: string
+          options?: Json | null
+          order_index?: number
+          question_text: string
+          section_id: string
+        }
+        Update: {
+          assessment_id?: string
+          cognitive_level?: string
+          correct_answer?: string | null
+          created_at?: string
+          difficulty?: string
+          id?: string
+          options?: Json | null
+          order_index?: number
+          question_text?: string
+          section_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_questions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_questions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_sections: {
+        Row: {
+          assessment_id: string
+          cognitive_levels: Json | null
+          created_at: string
+          difficulty_easy: number
+          difficulty_hard: number
+          difficulty_medium: number
+          id: string
+          num_questions: number
+          order_index: number
+          question_type: string
+          reading_passage: string | null
+          title: string
+        }
+        Insert: {
+          assessment_id: string
+          cognitive_levels?: Json | null
+          created_at?: string
+          difficulty_easy?: number
+          difficulty_hard?: number
+          difficulty_medium?: number
+          id?: string
+          num_questions?: number
+          order_index?: number
+          question_type?: string
+          reading_passage?: string | null
+          title?: string
+        }
+        Update: {
+          assessment_id?: string
+          cognitive_levels?: Json | null
+          created_at?: string
+          difficulty_easy?: number
+          difficulty_hard?: number
+          difficulty_medium?: number
+          id?: string
+          num_questions?: number
+          order_index?: number
+          question_type?: string
+          reading_passage?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_sections_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_submissions: {
+        Row: {
+          assessment_id: string
+          created_at: string
+          id: string
+          score: number | null
+          started_at: string
+          status: string
+          student_id: string
+          submitted_at: string | null
+        }
+        Insert: {
+          assessment_id: string
+          created_at?: string
+          id?: string
+          score?: number | null
+          started_at?: string
+          status?: string
+          student_id: string
+          submitted_at?: string | null
+        }
+        Update: {
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          score?: number | null
+          started_at?: string
+          status?: string
+          student_id?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_submissions_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignment_materials: {
         Row: {
           assignment_id: string
