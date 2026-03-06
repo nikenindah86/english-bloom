@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User, GraduationCap } from "lucide-react";
+import { BookOpen, Mail, Lock, User } from "lucide-react";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"student" | "teacher">("student");
+  
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -24,7 +24,7 @@ const Register = () => {
       email,
       password,
       options: {
-        data: { full_name: fullName, role },
+        data: { full_name: fullName, role: "student" },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -109,36 +109,6 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Role selection */}
-            <div className="space-y-2">
-              <Label>I am a...</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole("student")}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                    role === "student"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/40"
-                  }`}
-                >
-                  <GraduationCap className="w-6 h-6" />
-                  <span className="text-sm font-semibold">Student</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole("teacher")}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
-                    role === "teacher"
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/40"
-                  }`}
-                >
-                  <BookOpen className="w-6 h-6" />
-                  <span className="text-sm font-semibold">Teacher</span>
-                </button>
-              </div>
-            </div>
 
             <Button
               type="submit"
