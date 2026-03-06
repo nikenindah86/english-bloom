@@ -5,7 +5,7 @@ import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   BookOpen, LogOut, Home, Users, FileText, ClipboardList,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -23,6 +23,7 @@ const academicItems = [
   { title: "Materials", url: "/admin/materials", icon: FileText },
   { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
   { title: "Assignments", url: "/admin/assignments", icon: FileCheck },
+  { title: "Lesson Plans", url: "/admin/lesson-plans", icon: NotebookPen },
   { title: "Schedule", url: "/admin/schedule", icon: CalendarDays },
 ];
 

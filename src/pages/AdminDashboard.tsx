@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AnnouncementSection from "@/components/admin/AnnouncementSection";
-import { Users, ClipboardList, FileText, Megaphone, GraduationCap, FileCheck, CalendarDays, CheckSquare, PenLine, CalendarCheck, StickyNote } from "lucide-react";
+import { Users, ClipboardList, FileText, Megaphone, GraduationCap, FileCheck, CalendarDays, CheckSquare, PenLine, CalendarCheck, StickyNote, NotebookPen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
@@ -77,6 +77,7 @@ const AdminDashboard = () => {
               { label: "Materials", icon: FileText, path: "/admin/materials", bg: "bg-blush" },
               { label: "Quizzes", icon: ClipboardList, path: "/admin/quizzes", bg: "bg-lavender" },
               { label: "Assignments", icon: FileCheck, path: "/admin/assignments", bg: "bg-accent" },
+              { label: "Lessons", icon: NotebookPen, path: "/admin/lesson-plans", bg: "bg-blush" },
               { label: "Schedule", icon: CalendarDays, path: "/admin/schedule", bg: "bg-secondary" },
               { label: "Grading", icon: CheckSquare, path: "/admin/grading", bg: "bg-blush" },
               { label: "Manual", icon: PenLine, path: "/admin/manual-grades", bg: "bg-lavender" },
