@@ -22,7 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import {
-  FileCheck, Plus, Trash2, Edit, Loader2, Sparkles, ChevronRight, ChevronLeft,
+  FileCheck, Plus, Trash2, Edit, Loader2, Sparkles, ChevronRight, ChevronLeft, Users,
 } from "lucide-react";
 import ApiKeyManager from "@/components/admin/ApiKeyManager";
 import TkaBuilder from "@/components/admin/TkaBuilder";
@@ -107,8 +107,13 @@ const AdminAssessments = () => {
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
-  const [classId, setClassId] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
+
+  // Multi-class assignment for formative
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [showStudentAssign, setShowStudentAssign] = useState(false);
+  const [formStudents, setFormStudents] = useState<{ id: string; full_name: string; class_id: string | null }[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<{ id: string; purpose: string }[]>([]);
 
   // Step 2 fields
   const [generatingPassage, setGeneratingPassage] = useState(false);
@@ -129,6 +134,42 @@ const AdminAssessments = () => {
 
   const classMap = Object.fromEntries(classes.map((c) => [c.id, c.class_name]));
 
+  // Load students when formative classes change
+  useEffect(() => {
+    if (selectedClassIds.length === 0) {
+      setFormStudents([]);
+      return;
+    }
+    const load = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, class_id")
+        .in("class_id", selectedClassIds);
+      setFormStudents(data || []);
+    };
+    load();
+  }, [selectedClassIds]);
+
+  const toggleFormClass = (classId: string) => {
+    setSelectedClassIds(prev =>
+      prev.includes(classId) ? prev.filter(id => id !== classId) : [...prev, classId]
+    );
+  };
+
+  const toggleFormStudent = (studentId: string) => {
+    setSelectedStudents(prev => {
+      const exists = prev.find(s => s.id === studentId);
+      if (exists) return prev.filter(s => s.id !== studentId);
+      return [...prev, { id: studentId, purpose: "remedial" }];
+    });
+  };
+
+  const updateFormStudentPurpose = (studentId: string, purpose: string) => {
+    setSelectedStudents(prev =>
+      prev.map(s => s.id === studentId ? { ...s, purpose } : s)
+    );
+  };
+
   const fetchAssessments = async () => {
     const { data } = await supabase.from("assessments").select("*").order("created_at", { ascending: false });
     if (data) {
@@ -148,7 +189,8 @@ const AdminAssessments = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setTitle(""); setTopic(""); setDescription(""); setClassId(""); setDurationMinutes("60");
+    setTitle(""); setTopic(""); setDescription(""); setSelectedClassIds([]); setDurationMinutes("60");
+    setSelectedStudents([]); setShowStudentAssign(false);
     setSections([emptySectionDraft(0)]);
     setCurrentSectionIdx(0);
     setSectionQuestions({});
@@ -160,8 +202,29 @@ const AdminAssessments = () => {
     setEditingId(assessment.id);
     setTitle(assessment.title);
     setDescription(assessment.description || "");
-    setClassId(assessment.class_id);
+    setSelectedClassIds(assessment.class_id ? [assessment.class_id] : []);
     setDurationMinutes(assessment.duration_minutes.toString());
+    setSelectedStudents([]);
+    setShowStudentAssign(false);
+
+    // Load class assignments
+    const { data: classAssigns } = await supabase
+      .from("assessment_class_assignments")
+      .select("class_id")
+      .eq("assessment_id", assessment.id);
+    if (classAssigns && classAssigns.length > 0) {
+      setSelectedClassIds(classAssigns.map(ca => ca.class_id));
+    }
+
+    // Load student assignments
+    const { data: studentAssigns } = await supabase
+      .from("assessment_student_assignments")
+      .select("student_id, purpose")
+      .eq("assessment_id", assessment.id);
+    if (studentAssigns && studentAssigns.length > 0) {
+      setSelectedStudents(studentAssigns.map(sa => ({ id: sa.student_id, purpose: sa.purpose })));
+      setShowStudentAssign(true);
+    }
 
     const { data: secs } = await supabase.from("assessment_sections").select("*").eq("assessment_id", assessment.id).order("order_index");
     const loadedSections: SectionDraft[] = (secs || []).map((s, i) => ({
@@ -301,8 +364,8 @@ const AdminAssessments = () => {
   };
 
   const handleSave = async (activate: boolean) => {
-    if (!title.trim() || !classId) {
-      toast({ title: "Title and Class are required", variant: "destructive" });
+    if (!title.trim() || selectedClassIds.length === 0) {
+      toast({ title: "Title and at least 1 class are required", variant: "destructive" });
       return;
     }
     const totalQuestions = Object.values(sectionQuestions).reduce((sum, qs) => sum + qs.length, 0);
@@ -316,7 +379,7 @@ const AdminAssessments = () => {
       const payload: any = {
         title,
         description: description || null,
-        class_id: classId,
+        class_id: selectedClassIds[0],
         duration_minutes: parseInt(durationMinutes) || 60,
         is_active: activate,
         assessment_type: "formative",
@@ -325,10 +388,29 @@ const AdminAssessments = () => {
       if (editingId) {
         await supabase.from("assessment_questions").delete().eq("assessment_id", editingId);
         await supabase.from("assessment_sections").delete().eq("assessment_id", editingId);
+        await supabase.from("assessment_class_assignments").delete().eq("assessment_id", editingId);
+        await supabase.from("assessment_student_assignments").delete().eq("assessment_id", editingId);
         await supabase.from("assessments").update(payload).eq("id", editingId);
       } else {
         const { data } = await supabase.from("assessments").insert(payload).select().single();
         assessmentId = data!.id;
+      }
+
+      // Insert class assignments
+      const classAssignments = selectedClassIds.map(cid => ({
+        assessment_id: assessmentId!,
+        class_id: cid,
+      }));
+      await supabase.from("assessment_class_assignments").insert(classAssignments);
+
+      // Insert student assignments
+      if (selectedStudents.length > 0) {
+        const studentAssignments = selectedStudents.map(s => ({
+          assessment_id: assessmentId!,
+          student_id: s.id,
+          purpose: s.purpose,
+        }));
+        await supabase.from("assessment_student_assignments").insert(studentAssignments);
       }
 
       const sectionRows = sections.map((s, i) => ({
@@ -509,13 +591,68 @@ const AdminAssessments = () => {
               <div className="space-y-2"><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. English Mid-Term Test" /></div>
               <div className="space-y-2"><Label>Topic / Exam Material</Label><Textarea value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. Present Perfect Tense - Reading Comprehension, Narrative Text, etc." rows={3} /><p className="text-[10px] text-muted-foreground">This topic will be used by AI to generate questions and reading passages</p></div>
               <div className="space-y-2"><Label>Description (optional)</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description" rows={2} /></div>
+
+              {/* Multi-class selection */}
               <div className="space-y-2">
-                <Label>Class</Label>
-                <Select value={classId} onValueChange={setClassId}>
-                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                  <SelectContent>{classes.map((c) => (<SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>))}</SelectContent>
-                </Select>
+                <Label>Classes (select 1 or more)</Label>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto rounded-lg border border-border p-2">
+                  {classes.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={selectedClassIds.includes(c.id)}
+                        onCheckedChange={() => toggleFormClass(c.id)}
+                      />
+                      <span>{c.class_name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+
+              {/* Student assignment */}
+              <div className="space-y-2">
+                <button
+                  onClick={() => setShowStudentAssign(!showStudentAssign)}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Assign to specific students (optional)</span>
+                </button>
+                {showStudentAssign && (
+                  <div className="rounded-lg border border-border p-3 space-y-2">
+                    {selectedClassIds.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Select a class first</p>
+                    ) : formStudents.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">No students in selected classes</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                        {formStudents.map(s => {
+                          const selected = selectedStudents.find(ss => ss.id === s.id);
+                          return (
+                            <div key={s.id} className="flex items-center gap-2 text-xs">
+                              <Checkbox
+                                checked={!!selected}
+                                onCheckedChange={() => toggleFormStudent(s.id)}
+                              />
+                              <span className="flex-1 truncate">{s.full_name || "Unnamed"}</span>
+                              <Badge variant="outline" className="text-[9px]">{classMap[s.class_id || ""] || ""}</Badge>
+                              {selected && (
+                                <Select value={selected.purpose} onValueChange={v => updateFormStudentPurpose(s.id, v)}>
+                                  <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="remedial">Remedial</SelectItem>
+                                    <SelectItem value="pengayaan">Pengayaan</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label>Duration (minutes)</Label>
                 <Input type="number" value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} placeholder="60" />
@@ -606,7 +743,6 @@ const AdminAssessments = () => {
                 </div>
               </div>
 
-              {/* Total questions summary */}
               <div className="text-right text-sm font-bold">
                 Total: {sections.reduce((s, sec) => s + sec.num_questions, 0)} soal
               </div>
@@ -673,8 +809,8 @@ const AdminAssessments = () => {
             <div className="flex-1" />
             {step < 3 ? (
               <Button onClick={() => {
-                if (step === 1 && (!title.trim() || !classId)) {
-                  toast({ title: "Title and Class are required", variant: "destructive" });
+                if (step === 1 && (!title.trim() || selectedClassIds.length === 0)) {
+                  toast({ title: "Title and at least 1 class are required", variant: "destructive" });
                   return;
                 }
                 setStep(step + 1);

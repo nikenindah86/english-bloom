@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,14 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, Sparkles, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import {
-  TKA_FRAMEWORK, TkaBasketItem, TkaOutlineItem, BentukSoal,
+  TKA_FRAMEWORK, TkaBasketItem, TkaOutlineItem, BentukSoal, JenisTeks,
 } from "@/constants/tkaFramework";
 
 type QuestionDraft = {
@@ -24,6 +21,7 @@ type QuestionDraft = {
   correct_answer: string;
   difficulty: string;
   cognitive_level: string;
+  jenis_teks?: string;
   order_index: number;
 };
 
@@ -38,14 +36,22 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
 
   // Step 1: Basic info
   const [title, setTitle] = useState("");
-  const [jenisTeks, setJenisTeks] = useState<string>("narrative");
+  const [topic, setTopic] = useState("");
   const [tingkat, setTingkat] = useState<"B1" | "A2">("B1");
-  const [classId, setClassId] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [description, setDescription] = useState("");
 
-  // Step 2: Basket
+  // Multi-class assignment
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
+  // Student assignment
+  const [showStudentAssign, setShowStudentAssign] = useState(false);
+  const [students, setStudents] = useState<{ id: string; full_name: string; class_id: string | null }[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<{ id: string; purpose: string }[]>([]);
+
+  // Step 2: Basket - now includes jenis_teks per item
   const [basket, setBasket] = useState<TkaBasketItem[]>([]);
+  const [formJenisTeks, setFormJenisTeks] = useState<JenisTeks>("narrative");
   const [formBentuk, setFormBentuk] = useState<BentukSoal>("pg");
   const [formNumOptions, setFormNumOptions] = useState<4 | 5>(5);
   const [formNumQuestions, setFormNumQuestions] = useState(5);
@@ -54,18 +60,54 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
   const [formIncludePassage, setFormIncludePassage] = useState(true);
 
   // Step 3: Outline
-  const [outline, setOutline] = useState<TkaOutlineItem[]>([]);
+  const [outline, setOutline] = useState<(TkaOutlineItem & { jenis_teks?: string })[]>([]);
   const [outlineGenerated, setOutlineGenerated] = useState(false);
   const [generatingOutline, setGeneratingOutline] = useState(false);
 
   // Step 4: Generated questions
   const [questions, setQuestions] = useState<QuestionDraft[]>([]);
   const [generatingQuestions, setGeneratingQuestions] = useState(false);
-  const [readingPassage, setReadingPassage] = useState("");
+  const [passagesByGenre, setPassagesByGenre] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   const selectedKompetensi = TKA_FRAMEWORK.kompetensi.find(k => k.name === formKompetensi);
   const totalQuestions = basket.reduce((sum, b) => sum + b.num_questions, 0);
+
+  // Load students when classes are selected
+  useEffect(() => {
+    if (selectedClassIds.length === 0) {
+      setStudents([]);
+      return;
+    }
+    const load = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, full_name, class_id")
+        .in("class_id", selectedClassIds);
+      setStudents(data || []);
+    };
+    load();
+  }, [selectedClassIds]);
+
+  const toggleClass = (classId: string) => {
+    setSelectedClassIds(prev =>
+      prev.includes(classId) ? prev.filter(id => id !== classId) : [...prev, classId]
+    );
+  };
+
+  const toggleStudent = (studentId: string, purpose: string = "remedial") => {
+    setSelectedStudents(prev => {
+      const exists = prev.find(s => s.id === studentId);
+      if (exists) return prev.filter(s => s.id !== studentId);
+      return [...prev, { id: studentId, purpose }];
+    });
+  };
+
+  const updateStudentPurpose = (studentId: string, purpose: string) => {
+    setSelectedStudents(prev =>
+      prev.map(s => s.id === studentId ? { ...s, purpose } : s)
+    );
+  };
 
   const addToBasket = () => {
     if (formSubkompetensi.length === 0) {
@@ -78,6 +120,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
     }
     setBasket(prev => [...prev, {
       id: crypto.randomUUID(),
+      jenis_teks: formJenisTeks,
       bentuk_soal: formBentuk,
       num_options: formNumOptions,
       num_questions: formNumQuestions,
@@ -104,10 +147,10 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
         body: {
           mode: "tka",
           generate_outline: true,
-          jenis_teks: jenisTeks,
           tingkat,
-          topic: title,
+          topic: topic || title,
           basket_items: basket.map(b => ({
+            jenis_teks: b.jenis_teks,
             bentuk_soal: b.bentuk_soal,
             num_options: b.num_options,
             num_questions: b.num_questions,
@@ -137,17 +180,16 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
         body: {
           mode: "tka",
           generate_outline: false,
-          jenis_teks: jenisTeks,
           tingkat,
-          topic: title,
+          topic: topic || title,
           outline,
           generate_passage: needsPassage,
         },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.reading_passage) {
-        setReadingPassage(data.reading_passage);
+      if (data?.passages_by_genre) {
+        setPassagesByGenre(data.passages_by_genre);
       }
       if (data?.questions) {
         setQuestions(data.questions.map((q: any, i: number) => ({
@@ -156,6 +198,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
           correct_answer: typeof q.correct_answer === "object" ? JSON.stringify(q.correct_answer) : (q.correct_answer || ""),
           difficulty: q.difficulty || "medium",
           cognitive_level: q.cognitive_level || q.kompetensi || "Pemahaman Tekstual",
+          jenis_teks: q.jenis_teks || "",
           order_index: i,
         })));
         setStep(4);
@@ -168,8 +211,8 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
   };
 
   const handleSave = async (activate: boolean) => {
-    if (!title.trim() || !classId) {
-      toast({ title: "Title dan Class wajib diisi", variant: "destructive" });
+    if (!title.trim() || selectedClassIds.length === 0) {
+      toast({ title: "Title dan minimal 1 kelas wajib diisi", variant: "destructive" });
       return;
     }
     if (questions.length === 0) {
@@ -178,10 +221,11 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
     }
     setSaving(true);
     try {
+      // Create assessment (class_id = first selected class for backward compat)
       const { data: assessment } = await supabase.from("assessments").insert({
         title,
         description: description || null,
-        class_id: classId,
+        class_id: selectedClassIds[0],
         duration_minutes: parseInt(durationMinutes) || 60,
         is_active: activate,
         assessment_type: "tka",
@@ -189,30 +233,57 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
 
       if (!assessment) throw new Error("Failed to create assessment");
 
-      // Create a single section for TKA
-      const { data: section } = await supabase.from("assessment_sections").insert({
+      // Insert class assignments
+      const classAssignments = selectedClassIds.map(cid => ({
         assessment_id: assessment.id,
-        title: `TKA - ${jenisTeks}`,
-        question_type: "multiple_choice",
-        num_questions: questions.length,
-        reading_passage: readingPassage || null,
-        order_index: 0,
-      }).select().single();
-
-      if (!section) throw new Error("Failed to create section");
-
-      const questionRows = questions.map((q, i) => ({
-        section_id: section.id,
-        assessment_id: assessment.id,
-        question_text: q.question_text,
-        options: q.options,
-        correct_answer: q.correct_answer || null,
-        difficulty: q.difficulty,
-        cognitive_level: q.cognitive_level,
-        order_index: i,
+        class_id: cid,
       }));
+      await supabase.from("assessment_class_assignments").insert(classAssignments);
 
-      await supabase.from("assessment_questions").insert(questionRows);
+      // Insert student assignments if any
+      if (selectedStudents.length > 0) {
+        const studentAssignments = selectedStudents.map(s => ({
+          assessment_id: assessment.id,
+          student_id: s.id,
+          purpose: s.purpose,
+        }));
+        await supabase.from("assessment_student_assignments").insert(studentAssignments);
+      }
+
+      // Group questions by jenis_teks for sections
+      const genreGroups: Record<string, QuestionDraft[]> = {};
+      for (const q of questions) {
+        const genre = q.jenis_teks || "general";
+        if (!genreGroups[genre]) genreGroups[genre] = [];
+        genreGroups[genre].push(q);
+      }
+
+      let sectionOrder = 0;
+      for (const [genre, genreQuestions] of Object.entries(genreGroups)) {
+        const { data: section } = await supabase.from("assessment_sections").insert({
+          assessment_id: assessment.id,
+          title: `TKA - ${genre.charAt(0).toUpperCase() + genre.slice(1)}`,
+          question_type: "multiple_choice",
+          num_questions: genreQuestions.length,
+          reading_passage: passagesByGenre[genre] || null,
+          order_index: sectionOrder++,
+        }).select().single();
+
+        if (!section) continue;
+
+        const questionRows = genreQuestions.map((q, i) => ({
+          section_id: section.id,
+          assessment_id: assessment.id,
+          question_text: q.question_text,
+          options: q.options,
+          correct_answer: q.correct_answer || null,
+          difficulty: q.difficulty,
+          cognitive_level: q.cognitive_level,
+          order_index: i,
+        }));
+
+        await supabase.from("assessment_questions").insert(questionRows);
+      }
 
       toast({ title: "Assessment TKA berhasil disimpan!" });
       onSaved();
@@ -222,13 +293,15 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
     setSaving(false);
   };
 
-  const updateOutlineItem = (index: number, field: keyof TkaOutlineItem, value: string) => {
+  const updateOutlineItem = (index: number, field: string, value: string) => {
     setOutline(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
   const getBentukLabel = (value: string) => {
     return TKA_FRAMEWORK.bentuk_soal.find(b => b.value === value)?.label || value;
   };
+
+  const classMap = Object.fromEntries(classes.map(c => [c.id, c.class_name]));
 
   return (
     <div className="space-y-4">
@@ -246,41 +319,89 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Judul Assessment</Label>
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. TKA Bahasa Inggris - Narrative Text" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Jenis Teks</Label>
-              <Select value={jenisTeks} onValueChange={setJenisTeks}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {TKA_FRAMEWORK.jenis_teks.map(t => (
-                    <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tingkat Kemahiran</Label>
-              <div className="flex gap-2 pt-1">
-                {(["B1", "A2"] as const).map(t => (
-                  <button key={t} onClick={() => setTingkat(t)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-                      tingkat === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                    }`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. TKA Bahasa Inggris - Paket 1" />
           </div>
           <div className="space-y-2">
-            <Label>Kelas</Label>
-            <Select value={classId} onValueChange={setClassId}>
-              <SelectTrigger><SelectValue placeholder="Pilih kelas" /></SelectTrigger>
-              <SelectContent>{classes.map(c => (<SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>))}</SelectContent>
-            </Select>
+            <Label>Topik / Tema</Label>
+            <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. Daily Life, School Activities, Environment" />
+            <p className="text-[10px] text-muted-foreground">Topik umum untuk semua teks. Jenis teks dipilih per soal di keranjang.</p>
           </div>
+          <div className="space-y-2">
+            <Label>Tingkat Kemahiran</Label>
+            <div className="flex gap-2">
+              {(["B1", "A2"] as const).map(t => (
+                <button key={t} onClick={() => setTingkat(t)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                    tingkat === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}>
+                  {t} — {TKA_FRAMEWORK.tingkat_kemahiran[t].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Multi-class selection */}
+          <div className="space-y-2">
+            <Label>Kelas (pilih 1 atau lebih)</Label>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto rounded-lg border border-border p-2">
+              {classes.map(c => (
+                <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={selectedClassIds.includes(c.id)}
+                    onCheckedChange={() => toggleClass(c.id)}
+                  />
+                  <span>{c.class_name}</span>
+                </label>
+              ))}
+              {classes.length === 0 && <p className="text-xs text-muted-foreground italic">Belum ada kelas</p>}
+            </div>
+          </div>
+
+          {/* Student assignment */}
+          <div className="space-y-2">
+            <button
+              onClick={() => setShowStudentAssign(!showStudentAssign)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              <span>Assign ke murid tertentu (opsional)</span>
+            </button>
+            {showStudentAssign && (
+              <div className="rounded-lg border border-border p-3 space-y-2">
+                {selectedClassIds.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Pilih kelas dulu</p>
+                ) : students.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Tidak ada murid di kelas terpilih</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {students.map(s => {
+                      const selected = selectedStudents.find(ss => ss.id === s.id);
+                      return (
+                        <div key={s.id} className="flex items-center gap-2 text-xs">
+                          <Checkbox
+                            checked={!!selected}
+                            onCheckedChange={() => toggleStudent(s.id)}
+                          />
+                          <span className="flex-1 truncate">{s.full_name || "Unnamed"}</span>
+                          <Badge variant="outline" className="text-[9px]">{classMap[s.class_id || ""] || ""}</Badge>
+                          {selected && (
+                            <Select value={selected.purpose} onValueChange={v => updateStudentPurpose(s.id, v)}>
+                              <SelectTrigger className="h-6 w-24 text-[10px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="remedial">Remedial</SelectItem>
+                                <SelectItem value="pengayaan">Pengayaan</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Durasi (menit)</Label>
@@ -301,6 +422,17 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
             <Label className="font-semibold text-sm">Tambah Bentuk Soal</Label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
+                <Label className="text-xs">Jenis Teks</Label>
+                <Select value={formJenisTeks} onValueChange={v => setFormJenisTeks(v as JenisTeks)}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TKA_FRAMEWORK.jenis_teks.map(t => (
+                      <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label className="text-xs">Bentuk Soal</Label>
                 <Select value={formBentuk} onValueChange={v => setFormBentuk(v as BentukSoal)}>
                   <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -311,6 +443,8 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs">Jumlah Opsi</Label>
                 <div className="flex gap-2 pt-0.5">
@@ -324,8 +458,6 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                   ))}
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs">Jumlah Soal</Label>
                 <Input type="number" min={1} value={formNumQuestions} onChange={e => setFormNumQuestions(parseInt(e.target.value) || 1)} className="h-8 text-xs" />
@@ -386,6 +518,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                 {basket.map(b => (
                   <div key={b.id} className="flex items-center gap-2 p-2 rounded-lg bg-background border border-border/50 text-xs">
                     <div className="flex-1 min-w-0">
+                      <Badge variant="secondary" className="text-[9px] capitalize mr-1">{b.jenis_teks}</Badge>
                       <span className="font-semibold">{getBentukLabel(b.bentuk_soal)}</span>
                       <span className="text-muted-foreground"> ({b.num_options} opsi)</span>
                       <span className="mx-1">·</span>
@@ -403,6 +536,11 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
             )}
             <div className="text-right text-sm font-bold">
               Total: {totalQuestions} soal
+              {basket.length > 0 && (
+                <span className="text-xs text-muted-foreground font-normal ml-2">
+                  ({[...new Set(basket.map(b => b.jenis_teks))].join(", ")})
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -426,8 +564,9 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
               <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                 {outline.map((item, i) => (
                   <div key={i} className="rounded-lg border border-border p-3 bg-muted/20 space-y-1.5 text-xs">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-muted-foreground w-6 shrink-0">#{item.no}</span>
+                      <Badge variant="secondary" className="text-[9px] capitalize">{(item as any).jenis_teks || ""}</Badge>
                       <Badge variant="outline" className="text-[9px]">{getBentukLabel(item.bentuk_soal)}</Badge>
                       <Badge variant="secondary" className="text-[9px]">{item.kompetensi}</Badge>
                     </div>
@@ -437,7 +576,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                       onChange={e => updateOutlineItem(i, "deskripsi_soal", e.target.value)}
                       rows={2}
                       className="text-xs"
-                      placeholder="Deskripsi soal..."
+                      placeholder="Question description..."
                     />
                   </div>
                 ))}
@@ -457,12 +596,13 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
             Total: <span className="font-bold text-foreground">{questions.length}</span> soal · Durasi: <span className="font-bold text-foreground">{durationMinutes} min</span>
           </div>
 
-          {readingPassage && (
-            <div className="rounded-xl border border-border p-3 bg-muted/20 space-y-2">
-              <Label className="text-xs font-semibold">Reading Passage</Label>
-              <Textarea value={readingPassage} onChange={e => setReadingPassage(e.target.value)} rows={5} className="text-xs" />
+          {/* Passages by genre */}
+          {Object.entries(passagesByGenre).map(([genre, text]) => (
+            <div key={genre} className="rounded-xl border border-border p-3 bg-muted/20 space-y-2">
+              <Label className="text-xs font-semibold capitalize">Reading Passage — {genre}</Label>
+              <Textarea value={text} onChange={e => setPassagesByGenre(prev => ({ ...prev, [genre]: e.target.value }))} rows={4} className="text-xs" />
             </div>
-          )}
+          ))}
 
           <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
             {questions.map((q, i) => (
@@ -480,7 +620,10 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                     </div>
                   )}
                 </div>
-                <Badge variant="outline" className="text-[9px] shrink-0">{q.cognitive_level}</Badge>
+                <div className="flex flex-col gap-1 items-end shrink-0">
+                  {q.jenis_teks && <Badge variant="secondary" className="text-[9px] capitalize">{q.jenis_teks}</Badge>}
+                  <Badge variant="outline" className="text-[9px]">{q.cognitive_level}</Badge>
+                </div>
               </div>
             ))}
           </div>
@@ -497,8 +640,8 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
         <div className="flex-1" />
         {step === 1 && (
           <Button onClick={() => {
-            if (!title.trim() || !classId) {
-              toast({ title: "Title dan Class wajib diisi", variant: "destructive" });
+            if (!title.trim() || selectedClassIds.length === 0) {
+              toast({ title: "Title dan minimal 1 kelas wajib diisi", variant: "destructive" });
               return;
             }
             setStep(2);

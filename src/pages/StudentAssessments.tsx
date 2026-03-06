@@ -15,6 +15,7 @@ type AssessmentItem = {
   question_count: number;
   status: "not_started" | "in_progress" | "submitted";
   score?: number | null;
+  purpose?: string | null;
 };
 
 const StudentAssessments = () => {
@@ -26,12 +27,63 @@ const StudentAssessments = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
+      // Get student's class_id
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("class_id")
+        .eq("id", user.id)
+        .single();
+
+      // Get assessments assigned via class
+      let classAssessmentIds: string[] = [];
+      if (profile?.class_id) {
+        const { data: classAssigns } = await supabase
+          .from("assessment_class_assignments")
+          .select("assessment_id")
+          .eq("class_id", profile.class_id);
+        classAssessmentIds = (classAssigns || []).map(ca => ca.assessment_id);
+      }
+
+      // Get assessments assigned directly to student
+      const { data: studentAssigns } = await supabase
+        .from("assessment_student_assignments")
+        .select("assessment_id, purpose")
+        .eq("student_id", user.id);
+      const studentAssignMap: Record<string, string> = {};
+      (studentAssigns || []).forEach(sa => {
+        studentAssignMap[sa.assessment_id] = sa.purpose;
+      });
+      const studentAssessmentIds = Object.keys(studentAssignMap);
+
+      // Also check legacy class_id on assessments table
+      let legacyIds: string[] = [];
+      if (profile?.class_id) {
+        const { data: legacyAssessments } = await supabase
+          .from("assessments")
+          .select("id")
+          .eq("class_id", profile.class_id)
+          .eq("is_active", true);
+        legacyIds = (legacyAssessments || []).map(a => a.id);
+      }
+
+      // Combine unique IDs
+      const allIds = [...new Set([...classAssessmentIds, ...studentAssessmentIds, ...legacyIds])];
+
+      if (allIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+
       const { data: assessments } = await supabase
         .from("assessments")
         .select("id, title, description, duration_minutes")
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .in("id", allIds);
 
-      if (!assessments || assessments.length === 0) { setLoading(false); return; }
+      if (!assessments || assessments.length === 0) {
+        setLoading(false);
+        return;
+      }
 
       const ids = assessments.map((a) => a.id);
       const [{ data: questions }, { data: subs }] = await Promise.all([
@@ -57,6 +109,7 @@ const StudentAssessments = () => {
             ? "in_progress"
             : "not_started",
         score: subMap[a.id]?.score,
+        purpose: studentAssignMap[a.id] || null,
       })));
       setLoading(false);
     };
@@ -89,6 +142,9 @@ const StudentAssessments = () => {
                       <Badge variant={item.status === "submitted" ? "default" : item.status === "in_progress" ? "secondary" : "outline"} className="text-[10px]">
                         {item.status === "submitted" ? (item.score !== null ? `Score: ${item.score}` : "Submitted") : item.status === "in_progress" ? "In Progress" : "Not Started"}
                       </Badge>
+                      {item.purpose && (
+                        <Badge variant="secondary" className="text-[10px] capitalize">{item.purpose}</Badge>
+                      )}
                     </div>
                     {item.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.description}</p>}
                   </div>
