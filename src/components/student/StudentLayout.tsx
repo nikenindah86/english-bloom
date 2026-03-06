@@ -12,6 +12,7 @@ import {
 
 const navItems = [
   { label: "Home", icon: Home, path: "/student" },
+  { label: "Courses", icon: BookOpen, path: "/student/courses" },
   { label: "Materials", icon: FileText, path: "/student/materials" },
   { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes" },
   { label: "Tests", icon: PenTool, path: "/student/assessments" },
