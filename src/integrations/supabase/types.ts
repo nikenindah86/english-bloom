@@ -315,6 +315,77 @@ export type Database = {
           },
         ]
       }
+      lesson_plans: {
+        Row: {
+          assessment_method: string | null
+          class_id: string
+          closing_activity: string | null
+          core_competencies: string | null
+          created_at: string
+          date_end: string | null
+          date_start: string | null
+          id: string
+          learning_objectives: string
+          main_activity: string | null
+          materials_resources: string | null
+          notes: string | null
+          opening_activity: string | null
+          status: string
+          time_allocation: string | null
+          title: string
+          topic: string
+          week_number: number | null
+        }
+        Insert: {
+          assessment_method?: string | null
+          class_id: string
+          closing_activity?: string | null
+          core_competencies?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          id?: string
+          learning_objectives?: string
+          main_activity?: string | null
+          materials_resources?: string | null
+          notes?: string | null
+          opening_activity?: string | null
+          status?: string
+          time_allocation?: string | null
+          title: string
+          topic?: string
+          week_number?: number | null
+        }
+        Update: {
+          assessment_method?: string | null
+          class_id?: string
+          closing_activity?: string | null
+          core_competencies?: string | null
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          id?: string
+          learning_objectives?: string
+          main_activity?: string | null
+          materials_resources?: string | null
+          notes?: string | null
+          opening_activity?: string | null
+          status?: string
+          time_allocation?: string | null
+          title?: string
+          topic?: string
+          week_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_plans_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_grades: {
         Row: {
           class_id: string | null
