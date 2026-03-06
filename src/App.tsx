@@ -22,6 +22,7 @@ import AdminManualGrades from "./pages/AdminManualGrades";
 import AdminAssignments from "./pages/AdminAssignments";
 import AdminSchedule from "./pages/AdminSchedule";
 import AdminStudentNotes from "./pages/AdminStudentNotes";
+import AdminLessonPlans from "./pages/AdminLessonPlans";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentMaterials from "./pages/StudentMaterials";
 import StudentQuizzes from "./pages/StudentQuizzes";
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/admin/assignments" element={<ProtectedRoute requiredRole="teacher"><AdminAssignments /></ProtectedRoute>} />
             <Route path="/admin/schedule" element={<ProtectedRoute requiredRole="teacher"><AdminSchedule /></ProtectedRoute>} />
             <Route path="/admin/student-notes" element={<ProtectedRoute requiredRole="teacher"><AdminStudentNotes /></ProtectedRoute>} />
+            <Route path="/admin/lesson-plans" element={<ProtectedRoute requiredRole="teacher"><AdminLessonPlans /></ProtectedRoute>} />
             <Route path="/student" element={<ProtectedRoute requiredRole="student"><StudentDashboard /></ProtectedRoute>} />
             <Route path="/student/materials" element={<ProtectedRoute requiredRole="student"><StudentMaterials /></ProtectedRoute>} />
             <Route path="/student/quizzes" element={<ProtectedRoute requiredRole="student"><StudentQuizzes /></ProtectedRoute>} />
