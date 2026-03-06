@@ -471,7 +471,7 @@ const AdminAssessments = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-semibold truncate">{a.title}</h3>
                         <Badge variant={a.is_active ? "default" : "secondary"} className="text-[10px]">{a.is_active ? "Active" : "Draft"}</Badge>
-                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">TKA</Badge>
+                        <Badge variant="default" className="text-[10px]">TKA</Badge>
                         {classMap[a.class_id] && <Badge variant="outline" className="text-[10px]">{classMap[a.class_id]}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{a.question_count} question{a.question_count !== 1 ? "s" : ""} · {a.duration_minutes} min</p>
