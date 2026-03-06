@@ -94,6 +94,7 @@ export type BentukSoal = typeof TKA_FRAMEWORK.bentuk_soal[number]["value"];
 
 export type TkaBasketItem = {
   id: string;
+  jenis_teks: JenisTeks;
   bentuk_soal: BentukSoal;
   num_options: 4 | 5;
   num_questions: number;

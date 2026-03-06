@@ -15,7 +15,6 @@ const MODELS = [
   "gemini-2.0-flash-lite",
 ];
 
-// Full TKA framework text — verbatim from official source
 const TKA_FRAMEWORK_PROMPT = `
 KERANGKA ASESMEN TKA BAHASA INGGRIS SMA/SEDERAJAT
 
@@ -53,6 +52,14 @@ Bentuk Soal:
 - PGK Kategori: pernyataan yang dikategorikan (misal Similarity/Difference, Fact/Opinion)
 - PGK MCMA: pilihan ganda dengan beberapa jawaban benar
 `;
+
+const GENRE_MAP: Record<string, string> = {
+  "narrative": "Write a short story (fable, myth, legend, or folktale) with Orientation (characters, setting, time), Complication (conflict/problem), and Resolution. Include a moral lesson.",
+  "procedure": "Write a procedure text with a clear Goal/Title, a list of Materials/Ingredients, and numbered Steps.",
+  "descriptive": "Write a descriptive text about a specific person, place, or thing with vivid sensory details.",
+  "recount": "Write a recount of a past experience or event with Orientation, sequence of Events, and Re-orientation.",
+  "analytical exposition": "Write an argumentative text with a clear Thesis statement, supporting Arguments with evidence, and a Reiteration/conclusion.",
+};
 
 async function tryGenerate(apiKey: string, model: string, prompt: string): Promise<{ ok: boolean; data?: any; rateLimited?: boolean }> {
   try {
@@ -130,7 +137,6 @@ serve(async (req) => {
     const body = await req.json();
     const { mode } = body;
 
-    // Fetch active API keys
     const { data: keys, error: keysError } = await supabase
       .from("gemini_api_keys")
       .select("api_key")
@@ -143,12 +149,10 @@ serve(async (req) => {
       });
     }
 
-    // ============ TKA MODE ============
     if (mode === "tka") {
       return handleTkaMode(body, keys);
     }
 
-    // ============ FORMATIVE MODE (existing) ============
     return handleFormativeMode(body, keys);
 
   } catch (e) {
@@ -160,37 +164,38 @@ serve(async (req) => {
 });
 
 async function handleTkaMode(body: any, keys: any[]) {
-  const { generate_outline, jenis_teks, tingkat, topic, basket_items, outline, generate_passage } = body;
+  const { generate_outline, tingkat, topic, basket_items, outline, generate_passage } = body;
 
   if (generate_outline) {
-    // Generate outline from basket
     const totalQuestions = basket_items.reduce((s: number, b: any) => s + b.num_questions, 0);
     
+    // Group basket items by jenis_teks for display
     const basketDesc = basket_items.map((b: any, i: number) => {
-      return `Grup ${i+1}: ${b.num_questions} soal, bentuk=${b.bentuk_soal}, ${b.num_options || 5} opsi, kompetensi="${b.kompetensi}", subkompetensi: ${b.subkompetensi.map((s: string) => `"${s}"`).join(", ")}`;
+      return `Grup ${i+1}: ${b.num_questions} soal, jenis_teks="${b.jenis_teks}", bentuk=${b.bentuk_soal}, ${b.num_options || 5} opsi, kompetensi="${b.kompetensi}", subkompetensi: ${b.subkompetensi.map((s: string) => `"${s}"`).join(", ")}`;
     }).join("\n");
 
     const prompt = `${TKA_FRAMEWORK_PROMPT}
 
 You are creating an OUTLINE (not full questions) for a TKA assessment.
 
-Jenis teks: ${jenis_teks}
 Tingkat kemahiran: ${tingkat}
-Topic/Title: ${topic || jenis_teks}
+Topic/Title: ${topic || "English Language Assessment"}
 
-Question basket:
+Question basket (each group may have a different jenis_teks / text genre):
 ${basketDesc}
 
 Generate exactly ${totalQuestions} outline items. For each item, assign a subkompetensi from the basket's subkompetensi list. Distribute evenly across the provided subkompetensi.
 
 Each outline item should have:
 - no (sequential number starting from 1)
+- jenis_teks (the text genre from the basket group this question belongs to)
 - kompetensi (the parent kompetensi name, e.g. "Pemahaman Tekstual")
 - subkompetensi (exact text from the framework above)
 - bentuk_soal (from basket: "pg", "pgk_kategori", or "pgk_mcma")
 - num_options (from basket: 4 or 5)
-- deskripsi_soal (a brief 1-sentence description in Indonesian of what the question will test, specific to the jenis teks "${jenis_teks}")
+- deskripsi_soal (a brief 1-sentence description IN ENGLISH of what the question will test, specific to the jenis_teks)
 
+IMPORTANT: Write ALL deskripsi_soal in ENGLISH.
 You MUST use ONLY subkompetensi from the basket. Do NOT invent new ones.
 
 Return JSON:
@@ -198,6 +203,7 @@ Return JSON:
   "outline": [
     {
       "no": 1,
+      "jenis_teks": "narrative",
       "kompetensi": "...",
       "subkompetensi": "...",
       "bentuk_soal": "pg",
@@ -229,34 +235,39 @@ Return JSON:
     ? "B1 level: 250-350 words, high-frequency vocabulary (up to 3000 words), simple and complex sentence structures"
     : "A2 level: 200-300 words, high-frequency vocabulary (up to 2000 words), simple sentences and basic compound forms";
 
-  // Build passage prompt if needed
-  let passageText = "";
-  if (generate_passage) {
-    const genreMap: Record<string, string> = {
-      "narrative": "Write a short story (fable, myth, legend, or folktale) with Orientation (characters, setting, time), Complication (conflict/problem), and Resolution. Include a moral lesson.",
-      "procedure": "Write a procedure text with a clear Goal/Title, a list of Materials/Ingredients, and numbered Steps.",
-      "descriptive": "Write a descriptive text about a specific person, place, or thing with vivid sensory details.",
-      "recount": "Write a recount of a past experience or event with Orientation, sequence of Events, and Re-orientation.",
-      "analytical exposition": "Write an argumentative text with a clear Thesis statement, supporting Arguments with evidence, and a Reiteration/conclusion.",
-    };
-    const genreInstruction = genreMap[jenis_teks?.toLowerCase()] || `Write a ${jenis_teks} text.`;
+  // Group outline items by jenis_teks to generate per-genre passages
+  const genreGroups: Record<string, any[]> = {};
+  for (const item of outline) {
+    const genre = item.jenis_teks || "narrative";
+    if (!genreGroups[genre]) genreGroups[genre] = [];
+    genreGroups[genre].push(item);
+  }
 
-    const passagePrompt = `${genreInstruction}
+  // Generate passages per genre if needed
+  const passagesByGenre: Record<string, string> = {};
+  if (generate_passage) {
+    for (const genre of Object.keys(genreGroups)) {
+      const genreInstruction = GENRE_MAP[genre.toLowerCase()] || `Write a ${genre} text.`;
+      const passagePrompt = `${genreInstruction}
 
 The text should be appropriate for ${tingkatInfo}.
-Write in English. The text is for Indonesian SMA students.
-Topic: "${topic || jenis_teks}"
+IMPORTANT: Write the ENTIRE text in ENGLISH. This is an English language assessment for Indonesian SMA students.
+Topic: "${topic || genre}"
 
-Return JSON: { "reading_passage": "the full passage text" }`;
+Return JSON: { "reading_passage": "the full passage text in English" }`;
 
-    const passageResult = await runWithKeys(keys, passagePrompt, (d) => !!d?.reading_passage);
-    if (passageResult) {
-      passageText = passageResult.data.reading_passage;
+      const passageResult = await runWithKeys(keys, passagePrompt, (d) => !!d?.reading_passage);
+      if (passageResult) {
+        passagesByGenre[genre] = passageResult.data.reading_passage;
+      }
     }
   }
 
-  // Generate questions based on outline
+  // Generate questions based on outline, grouped by genre
   const outlineDesc = outline.map((item: any) => {
+    const passageRef = passagesByGenre[item.jenis_teks || "narrative"] 
+      ? `(Based on the ${item.jenis_teks} reading passage provided below)` 
+      : "";
     let format = "";
     if (item.bentuk_soal === "pg") {
       format = `Multiple choice with ${item.num_options} options and exactly 1 correct answer. Return "options" as array and "correct_answer" as the correct option text.`;
@@ -266,24 +277,32 @@ Return JSON: { "reading_passage": "the full passage text" }`;
       format = `Multiple choice with ${item.num_options} options and MULTIPLE correct answers (2-3). Return "options" as array and "correct_answer" as a JSON array string of correct options.`;
     }
     return `Question #${item.no}:
+  - Jenis Teks: ${item.jenis_teks || "narrative"}
   - Kompetensi: ${item.kompetensi}
   - Subkompetensi: ${item.subkompetensi}
   - Description: ${item.deskripsi_soal}
-  - Format: ${format}`;
+  - Format: ${format}
+  ${passageRef}`;
+  }).join("\n\n");
+
+  // Build passage sections
+  const passageSections = Object.entries(passagesByGenre).map(([genre, text]) => {
+    return `=== READING PASSAGE for "${genre}" ===\n"""\n${text}\n"""`;
   }).join("\n\n");
 
   const questionsPrompt = `${TKA_FRAMEWORK_PROMPT}
 
 You are generating TKA assessment questions for Bahasa Inggris SMA.
-
-Jenis teks: ${jenis_teks}
 Tingkat: ${tingkat} (${tingkatInfo})
 
-${passageText ? `READING PASSAGE (base all questions on this):\n"""\n${passageText}\n"""` : ""}
+${passageSections ? `READING PASSAGES (base questions on the passage matching their jenis_teks):\n${passageSections}` : ""}
 
 Generate questions EXACTLY following this outline. Each question MUST match its assigned subkompetensi and format.
 
 ${outlineDesc}
+
+IMPORTANT: Write ALL question_text and ALL options in ENGLISH. This is an English language test.
+IMPORTANT: You MUST follow the outline exactly. Do NOT create questions outside the given subkompetensi.
 
 Return JSON:
 {
@@ -295,12 +314,11 @@ Return JSON:
       "difficulty": "easy" | "medium" | "hard",
       "cognitive_level": "Pemahaman Tekstual" | "Pemahaman Inferensial" | "Evaluasi dan Apresiasi",
       "kompetensi": "...",
-      "subkompetensi": "..."
+      "subkompetensi": "...",
+      "jenis_teks": "..."
     }
   ]
-}
-
-IMPORTANT: You MUST follow the outline exactly. Do NOT create questions outside the given subkompetensi.`;
+}`;
 
   const result = await runWithKeys(keys, questionsPrompt, (d) => Array.isArray(d?.questions));
   if (!result) {
@@ -315,11 +333,14 @@ IMPORTANT: You MUST follow the outline exactly. Do NOT create questions outside 
     correct_answer: typeof q.correct_answer === "object" ? JSON.stringify(q.correct_answer) : (q.correct_answer || ""),
     difficulty: q.difficulty || "medium",
     cognitive_level: q.cognitive_level || q.kompetensi || "Pemahaman Tekstual",
+    jenis_teks: q.jenis_teks || "",
     order_index: i,
   }));
 
   const responseData: any = { questions, model_used: result.model };
-  if (passageText) responseData.reading_passage = passageText;
+  if (Object.keys(passagesByGenre).length > 0) {
+    responseData.passages_by_genre = passagesByGenre;
+  }
 
   return new Response(JSON.stringify(responseData), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -333,15 +354,10 @@ async function handleFormativeMode(body: any, keys: any[]) {
     return new Response(JSON.stringify({ error: "topic is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
-  // Mode: generate reading passage only
   if (generate_passage) {
     const topicLower = topic.toLowerCase();
     const genreMap: Record<string, string> = {
-      "narrative": "Write a short story (fable, myth, legend, or folktale) with Orientation (characters, setting, time), Complication (conflict/problem), and Resolution. Include a moral lesson. Do NOT explain what narrative text is.",
-      "procedure": "Write a procedure text with a clear Goal/Title, a list of Materials/Ingredients, and numbered Steps explaining how to do or make something. Do NOT explain what procedure text is.",
-      "descriptive": "Write a descriptive text about a specific person, place, or thing with vivid sensory details, using Identification and Description structure. Do NOT explain what descriptive text is.",
-      "recount": "Write a recount of a past experience or event with Orientation, a sequence of Events in chronological order, and Re-orientation. Do NOT explain what recount text is.",
-      "analytical exposition": "Write an argumentative text with a clear Thesis statement, supporting Arguments with evidence, and a Reiteration/conclusion. Do NOT explain what analytical exposition is.",
+      ...GENRE_MAP,
       "hortatory exposition": "Write a persuasive text with a Thesis, Arguments, and a Recommendation urging the reader to take action. Do NOT explain what hortatory exposition is.",
       "exposition": "Write an argumentative or persuasive text with a Thesis, Arguments, and Conclusion/Recommendation. Do NOT explain what exposition text is.",
       "explanation": "Write an explanation text describing how a natural or social process works, with a General Statement, step-by-step Explanation of the process, and a Conclusion. Do NOT explain what explanation text is.",
@@ -359,8 +375,8 @@ async function handleFormativeMode(body: any, keys: any[]) {
     }
 
     const passagePrompt = genreInstruction
-      ? `${genreInstruction}\n\nTopic/theme: "${topic}".\nThe text should be 150-300 words, in English, well-structured with clear paragraphs, and appropriate for Indonesian high school students (SMA).\n${question_type === "true_false_statement" ? "Include enough specific factual details to support true/false statement questions.\n" : ""}\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`
-      : `Generate a reading passage about "${topic}" suitable for an English language assessment.\nThe passage should be 150-300 words, well-structured with clear paragraphs, educational, and appropriate for high school students.\n${question_type === "true_false_statement" ? "The passage should contain enough factual details to support true/false statement questions.\n" : ""}\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`;
+      ? `${genreInstruction}\n\nTopic/theme: "${topic}".\nThe text should be 150-300 words, in English, well-structured with clear paragraphs, and appropriate for Indonesian high school students (SMA).\n${question_type === "true_false_statement" ? "Include enough specific factual details to support true/false statement questions.\n" : ""}\nIMPORTANT: Write the ENTIRE passage in ENGLISH.\n\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`
+      : `Generate a reading passage about "${topic}" suitable for an English language assessment.\nThe passage should be 150-300 words, well-structured with clear paragraphs, educational, and appropriate for high school students.\n${question_type === "true_false_statement" ? "The passage should contain enough factual details to support true/false statement questions.\n" : ""}\nIMPORTANT: Write the ENTIRE passage in ENGLISH.\n\nReturn a JSON object with this exact structure:\n{\n  "reading_passage": "the full passage text here"\n}`;
 
     const result = await runWithKeys(keys, passagePrompt, (d) => !!d?.reading_passage);
     if (!result) {
@@ -373,7 +389,6 @@ async function handleFormativeMode(body: any, keys: any[]) {
     });
   }
 
-  // Mode: generate questions
   if (!question_type || !num_questions) {
     return new Response(JSON.stringify({ error: "question_type and num_questions are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
@@ -418,6 +433,8 @@ Each question must be ${typeLabel[question_type] || question_type}.
 ${diffInfo ? `Difficulty distribution: ${diffInfo}.` : ""}
 ${cogInfo}
 ${passageInfo}
+
+IMPORTANT: Write ALL question_text and ALL options in ENGLISH.
 
 Return a JSON object with this exact structure:
 {
