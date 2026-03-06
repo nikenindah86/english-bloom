@@ -5,42 +5,38 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, FileCheck, Trash2, Eye } from "lucide-react";
+import { Plus, FileCheck, Trash2, Eye, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import CreateAssignmentDialog from "@/components/admin/CreateAssignmentDialog";
 
 const AdminAssignments = () => {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [classId, setClassId] = useState("");
-  const [dueDate, setDueDate] = useState<Date>();
-  const [maxScore, setMaxScore] = useState("100");
   const [viewSubs, setViewSubs] = useState<string | null>(null);
   const [gradeDialog, setGradeDialog] = useState<{ id: string; score: string; feedback: string } | null>(null);
-
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: async () => {
-      const { data } = await supabase.from("classes").select("id, class_name").eq("is_archived", false);
-      return data || [];
-    },
-  });
 
   const { data: assignments = [] } = useQuery({
     queryKey: ["admin-assignments"],
     queryFn: async () => {
       const { data } = await supabase.from("assignments").select("*, classes(class_name)").order("created_at", { ascending: false });
       return data || [];
+    },
+  });
+
+  // Fetch material counts per assignment
+  const { data: materialCounts = {} } = useQuery({
+    queryKey: ["assignment-material-counts"],
+    queryFn: async () => {
+      const { data } = await supabase.from("assignment_materials").select("assignment_id");
+      if (!data) return {};
+      const counts: Record<string, number> = {};
+      data.forEach((row: any) => {
+        counts[row.assignment_id] = (counts[row.assignment_id] || 0) + 1;
+      });
+      return counts;
     },
   });
 
@@ -52,23 +48,6 @@ const AdminAssignments = () => {
       return data || [];
     },
     enabled: !!viewSubs,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("assignments").insert({
-        title, description: description || null, class_id: classId,
-        due_date: dueDate?.toISOString() || null, max_score: Number(maxScore) || 100,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-assignments"] });
-      setShowCreate(false);
-      setTitle(""); setDescription(""); setClassId(""); setDueDate(undefined); setMaxScore("100");
-      toast.success("Assignment created!");
-    },
-    onError: () => toast.error("Failed to create assignment"),
   });
 
   const deleteMutation = useMutation({
@@ -115,60 +94,41 @@ const AdminAssignments = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {assignments.map((a: any) => (
-              <div key={a.id} className="glass rounded-2xl p-4 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-display font-bold text-sm truncate">{a.title}</p>
-                    <p className="text-xs text-muted-foreground">{a.classes?.class_name || "No class"}</p>
+            {assignments.map((a: any) => {
+              const matCount = (materialCounts as Record<string, number>)[a.id] || 0;
+              return (
+                <div key={a.id} className="glass rounded-2xl p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-display font-bold text-sm truncate">{a.title}</p>
+                      <p className="text-xs text-muted-foreground">{a.classes?.class_name || "No class"}</p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8" onClick={() => setViewSubs(a.id)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-destructive" onClick={() => deleteMutation.mutate(a.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8" onClick={() => setViewSubs(a.id)}>
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-xl h-8 w-8 text-destructive" onClick={() => deleteMutation.mutate(a.id)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    {a.due_date && <Badge variant="outline" className="text-[10px]">Due: {format(new Date(a.due_date), "MMM d, yyyy")}</Badge>}
+                    <Badge variant="secondary" className="text-[10px]">Max: {a.max_score}</Badge>
+                    {matCount > 0 && (
+                      <Badge variant="outline" className="text-[10px] gap-1">
+                        <Paperclip className="w-2.5 h-2.5" /> {matCount} material{matCount > 1 ? "s" : ""}
+                      </Badge>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {a.due_date && <Badge variant="outline" className="text-[10px]">Due: {format(new Date(a.due_date), "MMM d, yyyy")}</Badge>}
-                  <Badge variant="secondary" className="text-[10px]">Max: {a.max_score}</Badge>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Create Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader><DialogTitle className="font-display">New Assignment</DialogTitle></DialogHeader>
-          <div className="space-y-4 py-2">
-            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title" className="rounded-xl" />
-            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Description..." className="rounded-xl" />
-            <Select value={classId} onValueChange={setClassId}>
-              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Select class" /></SelectTrigger>
-              <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>)}</SelectContent>
-            </Select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full rounded-xl justify-start text-left font-normal", !dueDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />{dueDate ? format(dueDate, "PPP") : "Pick due date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-            <Input value={maxScore} onChange={e => setMaxScore(e.target.value)} placeholder="Max Score" type="number" className="rounded-xl" />
-          </div>
-          <DialogFooter>
-            <Button onClick={() => createMutation.mutate()} disabled={!title.trim() || !classId} className="rounded-xl w-full">Create</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateAssignmentDialog open={showCreate} onOpenChange={setShowCreate} />
 
       {/* Submissions Dialog */}
       <Dialog open={!!viewSubs} onOpenChange={() => setViewSubs(null)}>
