@@ -1,31 +1,40 @@
 
-Masalah yang terlihat dari codebase dan screenshot:
 
-1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
-   - `netlify.toml`
-   - `public/_redirects`
-2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
+## Plan: Sidebar Reorganization + Products CRUD
 
-Rencana implementasi:
+### 1. Sidebar Reorganization
 
-1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
-2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
-3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
-4. Validasi routing React tetap benar dan tidak ubah struktur route existing
-5. Setelah deploy, verifikasi:
-   - buka `/` (cek tombol sudah besar di mobile)
-   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
+**`AdminLayout.tsx`**: Remove "Courses" from `academicItems`. Add new `commerceItems` array with "Courses" and "Products" (`/admin/products`). Import `ShoppingBag` icon. Render a new "Commerce" group after "Assessment".
 
-File yang akan diubah:
+**`MobileBottomNav.tsx`**: Add "Products" to `adminMoreItems`.
 
-| File | Perubahan |
-|---|---|
-| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
-| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
-| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
+### 2. Database: Products Table
 
-Detail teknis:
+Create `products` table:
+- `id` (uuid PK), `title` (text), `description` (text nullable), `thumbnail_url` (text nullable), `price` (numeric default 0), `checkout_link` (text nullable), `is_active` (boolean default true), `created_at` (timestamptz), `updated_at` (timestamptz)
 
-- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
-- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
-- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
+RLS: Teachers full CRUD access. Public SELECT for active products (for future storefront).
+
+### 3. New Page: `/admin/products`
+
+**`src/pages/AdminProducts.tsx`**: Full CRUD with:
+- Header + "Add Product" button opening a dialog
+- Dialog form: Title, Short Description (textarea), Thumbnail URL input, Price (number, 0 = Free), Checkout/Action Link (URL)
+- Product cards in a responsive grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`)
+
+**Card design**: Dark charcoal background (`bg-gray-900`), white text, thumbnail image at top with rounded corners, prominent price badge (green for paid, outline for free: "Rp 69.000" format), vibrant teal/green CTA button ("Beli Sekarang"). Edit and Delete actions.
+
+### 4. Routing
+
+**`App.tsx`**: Add `/admin/products` route with `ProtectedRoute requiredRole="teacher"`.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| DB Migration | Create `products` table + RLS |
+| `AdminLayout.tsx` | Add Commerce group with Courses + Products |
+| `MobileBottomNav.tsx` | Add Products to adminMoreItems |
+| `App.tsx` | Add `/admin/products` route |
+| `src/pages/AdminProducts.tsx` | New — full CRUD page |
+
