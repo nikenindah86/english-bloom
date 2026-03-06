@@ -28,6 +28,8 @@ const CreateAssignmentDialog = ({ open, onOpenChange }: CreateAssignmentDialogPr
   const [classId, setClassId] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
   const [maxScore, setMaxScore] = useState("100");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
   const [newMaterials, setNewMaterials] = useState<{ title: string; type: string; file_url: string }[]>([]);
   const [newMatTitle, setNewMatTitle] = useState("");
@@ -73,6 +75,7 @@ const CreateAssignmentDialog = ({ open, onOpenChange }: CreateAssignmentDialogPr
     setTitle(""); setDescription(""); setClassId(""); setDueDate(undefined);
     setMaxScore("100"); setSelectedMaterialIds([]); setNewMaterials([]);
     setNewMatTitle(""); setNewMatUrl(""); setNewMatType("link");
+    setScheduledAt(""); setExpiresAt("");
   };
 
   const createMutation = useMutation({
@@ -81,6 +84,8 @@ const CreateAssignmentDialog = ({ open, onOpenChange }: CreateAssignmentDialogPr
       const { data: assignment, error } = await supabase.from("assignments").insert({
         title, description: description || null, class_id: classId,
         due_date: dueDate?.toISOString() || null, max_score: Number(maxScore) || 100,
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       }).select("id").single();
       if (error || !assignment) throw error;
 
@@ -140,6 +145,21 @@ const CreateAssignmentDialog = ({ open, onOpenChange }: CreateAssignmentDialogPr
             </PopoverContent>
           </Popover>
           <Input value={maxScore} onChange={e => setMaxScore(e.target.value)} placeholder="Max Score" type="number" className="rounded-xl" />
+
+          {/* Scheduling */}
+          <div className="border-t border-border pt-3 space-y-2">
+            <p className="text-sm font-medium">📅 Scheduling (optional)</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Scheduled At</label>
+                <Input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} className="rounded-xl text-xs h-9" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Expires At</label>
+                <Input type="datetime-local" value={expiresAt} onChange={e => setExpiresAt(e.target.value)} className="rounded-xl text-xs h-9" />
+              </div>
+            </div>
+          </div>
 
           {/* Attach Materials Section */}
           {classId && (

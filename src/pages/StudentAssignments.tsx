@@ -113,10 +113,14 @@ const StudentAssignments = () => {
           <div className="space-y-3">
             {assignments.map((a: any) => {
               const sub = getSubmission(a.id);
-              const isOverdue = a.due_date && new Date(a.due_date) < new Date() && !sub;
+              const now = new Date();
+              const isOverdue = a.due_date && new Date(a.due_date) < now && !sub;
+              const isExpired = a.expires_at && new Date(a.expires_at) < now;
+              const isUpcoming = a.scheduled_at && new Date(a.scheduled_at) > now;
               const materials = getMaterials(a.id);
+              const canSubmit = !sub && !isExpired && !isUpcoming;
               return (
-                <div key={a.id} className={`glass rounded-2xl p-4 space-y-2 ${isOverdue ? "border border-destructive/30" : ""}`}>
+                <div key={a.id} className={`glass rounded-2xl p-4 space-y-2 ${isOverdue ? "border border-destructive/30" : ""} ${(isExpired && !sub) ? "opacity-60" : ""}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-display font-bold text-sm">{a.title}</p>
@@ -126,10 +130,14 @@ const StudentAssignments = () => {
                       <Badge variant={sub.status === "graded" ? "default" : "secondary"} className="text-[10px] shrink-0">
                         {sub.status === "graded" ? `Score: ${sub.score}` : "Submitted"}
                       </Badge>
-                    ) : (
+                    ) : canSubmit ? (
                       <Button size="sm" className="rounded-xl text-xs shrink-0 gap-1" onClick={() => setSubmitDialog(a.id)}>
                         <Upload className="w-3 h-3" /> Submit
                       </Button>
+                    ) : isExpired ? (
+                      <Badge variant="destructive" className="text-[10px] shrink-0">⏰ Expired</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] shrink-0">🔒 Upcoming</Badge>
                     )}
                   </div>
                   <div className="flex gap-2 flex-wrap">
@@ -139,6 +147,7 @@ const StudentAssignments = () => {
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-[10px]">Max: {a.max_score}</Badge>
+                    {isUpcoming && <Badge variant="outline" className="text-[10px]">Opens {new Date(a.scheduled_at).toLocaleString()}</Badge>}
                   </div>
                   {/* Linked Materials */}
                   {materials.length > 0 && (

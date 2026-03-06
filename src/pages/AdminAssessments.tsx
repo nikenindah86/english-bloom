@@ -108,6 +108,8 @@ const AdminAssessments = () => {
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [durationMinutes, setDurationMinutes] = useState("60");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
 
   // Multi-class assignment for formative
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -190,6 +192,7 @@ const AdminAssessments = () => {
   const openCreate = () => {
     setEditingId(null);
     setTitle(""); setTopic(""); setDescription(""); setSelectedClassIds([]); setDurationMinutes("60");
+    setScheduledAt(""); setExpiresAt("");
     setSelectedStudents([]); setShowStudentAssign(false);
     setSections([emptySectionDraft(0)]);
     setCurrentSectionIdx(0);
@@ -204,6 +207,8 @@ const AdminAssessments = () => {
     setDescription(assessment.description || "");
     setSelectedClassIds(assessment.class_id ? [assessment.class_id] : []);
     setDurationMinutes(assessment.duration_minutes.toString());
+    setScheduledAt((assessment as any).scheduled_at ? new Date((assessment as any).scheduled_at).toISOString().slice(0, 16) : "");
+    setExpiresAt((assessment as any).expires_at ? new Date((assessment as any).expires_at).toISOString().slice(0, 16) : "");
     setSelectedStudents([]);
     setShowStudentAssign(false);
 
@@ -383,6 +388,8 @@ const AdminAssessments = () => {
         duration_minutes: parseInt(durationMinutes) || 60,
         is_active: activate,
         assessment_type: "formative",
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
       };
 
       if (editingId) {
@@ -656,6 +663,21 @@ const AdminAssessments = () => {
               <div className="space-y-2">
                 <Label>Duration (minutes)</Label>
                 <Input type="number" value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} placeholder="60" />
+              </div>
+
+              {/* Scheduling */}
+              <div className="border-t border-border pt-3 space-y-3">
+                <h4 className="font-semibold text-sm">📅 Scheduling</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Scheduled At (optional)</Label>
+                    <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Expires At (optional)</Label>
+                    <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-8 text-xs" />
+                  </div>
+                </div>
               </div>
             </div>
           )}

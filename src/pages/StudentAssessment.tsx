@@ -213,8 +213,35 @@ const StudentAssessment = () => {
 
   if (!assessment) return null;
 
+  const isExpired = assessment?.expires_at && new Date(assessment.expires_at) < new Date();
+  const isUpcoming = assessment?.scheduled_at && new Date(assessment.scheduled_at) > new Date();
+
   // Start screen
   if (!started) {
+    if (isExpired) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass rounded-2xl p-6 max-w-md w-full space-y-4 text-center">
+            <Clock className="w-12 h-12 mx-auto text-destructive" />
+            <h2 className="font-display font-bold text-xl">Assessment Expired</h2>
+            <p className="text-sm text-muted-foreground">This assessment is no longer available.</p>
+            <Button variant="ghost" onClick={() => navigate("/student/assessments")} className="w-full text-xs">Back</Button>
+          </div>
+        </div>
+      );
+    }
+    if (isUpcoming) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="glass rounded-2xl p-6 max-w-md w-full space-y-4 text-center">
+            <Clock className="w-12 h-12 mx-auto text-amber-500" />
+            <h2 className="font-display font-bold text-xl">Not Yet Available</h2>
+            <p className="text-sm text-muted-foreground">Opens at {new Date(assessment.scheduled_at).toLocaleString()}</p>
+            <Button variant="ghost" onClick={() => navigate("/student/assessments")} className="w-full text-xs">Back</Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass rounded-2xl p-6 max-w-md w-full space-y-4 text-center">
