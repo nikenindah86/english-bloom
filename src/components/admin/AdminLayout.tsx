@@ -20,6 +20,7 @@ const mainItems = [
 const academicItems = [
   { title: "Classes", url: "/admin/classes", icon: GraduationCap },
   { title: "Students", url: "/admin/students", icon: Users },
+  { title: "Courses", url: "/admin/courses", icon: BookOpen },
   { title: "Materials", url: "/admin/materials", icon: FileText },
   { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
   { title: "Assessments", url: "/admin/assessments", icon: FileCheck },

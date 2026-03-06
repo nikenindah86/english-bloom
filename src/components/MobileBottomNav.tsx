@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Home, FileText, ClipboardList, Star, User, Users, CheckSquare, MoreHorizontal } from "lucide-react";
+import { Home, FileText, ClipboardList, Star, User, Users, CheckSquare, MoreHorizontal, BookOpen } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GraduationCap, PenLine, CalendarCheck, FileCheck, CalendarDays, StickyNote, Megaphone, NotebookPen } from "lucide-react";
 import { useState } from "react";
@@ -13,7 +13,7 @@ type NavItem = {
 
 const studentNav: NavItem[] = [
   { label: "Home", icon: Home, path: "/student" },
-  { label: "Materials", icon: FileText, path: "/student/materials" },
+  { label: "Courses", icon: BookOpen, path: "/student/courses" },
   { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes" },
   { label: "Grades", icon: Star, path: "/student/grades" },
   { label: "Profile", icon: User, path: "/student/profile" },
@@ -27,6 +27,7 @@ const adminMainNav: NavItem[] = [
 ];
 
 const adminMoreItems: NavItem[] = [
+  { label: "Courses", icon: BookOpen, path: "/admin/courses" },
   { label: "Assessments", icon: FileCheck, path: "/admin/assessments" },
   { label: "Classes", icon: GraduationCap, path: "/admin/classes" },
   { label: "Materials", icon: FileText, path: "/admin/materials" },
