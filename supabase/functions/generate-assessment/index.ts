@@ -74,10 +74,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { topic, question_type, num_questions, difficulty_distribution, cognitive_levels, reading_passage } = await req.json();
+    const { topic, question_type, num_questions, difficulty_distribution, cognitive_levels, reading_passage, generate_passage } = await req.json();
 
-    if (!topic || !question_type || !num_questions) {
-      return new Response(JSON.stringify({ error: "topic, question_type, and num_questions are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!topic) {
+      return new Response(JSON.stringify({ error: "topic is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Fetch active API keys
@@ -93,9 +93,43 @@ serve(async (req) => {
       });
     }
 
+    // Mode: generate reading passage only
+    if (generate_passage) {
+      const passagePrompt = `Generate a reading passage about "${topic}" suitable for an English language assessment.
+The passage should be 150-300 words, well-structured with clear paragraphs, educational, and appropriate for high school or university students.
+${question_type === "true_false_statement" ? "The passage should contain enough factual details to support true/false statement questions." : ""}
+
+Return a JSON object with this exact structure:
+{
+  "reading_passage": "the full passage text here"
+}`;
+
+      for (const keyRow of keys) {
+        for (const model of MODELS) {
+          const result = await tryGenerate(keyRow.api_key, model, passagePrompt);
+          if (result.ok && result.data?.reading_passage) {
+            return new Response(JSON.stringify({ reading_passage: result.data.reading_passage, model_used: model }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          if (!result.rateLimited) continue;
+        }
+      }
+      return new Response(JSON.stringify({ error: "All API keys and models exhausted for passage generation." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Mode: generate questions
+    if (!question_type || !num_questions) {
+      return new Response(JSON.stringify({ error: "question_type and num_questions are required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const typeLabel: Record<string, string> = {
-      multiple_choice: "multiple choice with 4 options (A, B, C, D)",
-      true_false: "true or false",
+      multiple_choice: "multiple choice with 4 options (A, B, C, D). Each question has exactly ONE correct answer.",
+      mcma: "multiple choice with 4-5 options. Each question may have MULTIPLE correct answers (2-3 correct answers per question). The correct_answer field must be a JSON array of the correct options, e.g. [\"option A\", \"option C\"].",
+      true_false: "true or false. Each question is a statement, and the correct_answer is either \"True\" or \"False\".",
+      true_false_statement: "true or false statement categorization. Each question is a specific statement derived from the reading passage, and the correct_answer is either \"True\" or \"False\". Statements should test comprehension of specific details in the passage.",
       short_answer: "short answer (1-2 sentences)",
       essay: "essay (open-ended, requires a paragraph answer)",
     };
@@ -114,6 +148,18 @@ serve(async (req) => {
       ? `\n\nBase all questions on the following reading passage:\n"""\n${reading_passage}\n"""`
       : "";
 
+    const optionsField = question_type === "multiple_choice" || question_type === "mcma"
+      ? '"options": ["option A", "option B", "option C", "option D"],'
+      : question_type === "true_false" || question_type === "true_false_statement"
+        ? '"options": ["True", "False"],'
+        : "";
+
+    const correctAnswerNote = question_type === "mcma"
+      ? 'The correct_answer must be a JSON array string of all correct options, e.g. \'["option A", "option C"]\'. Each question should have 2-3 correct answers.'
+      : question_type === "multiple_choice"
+        ? "The correct_answer must exactly match one of the options."
+        : "";
+
     const prompt = `Generate exactly ${num_questions} assessment questions about "${topic}" in English.
 Each question must be ${typeLabel[question_type] || question_type}.
 ${diffInfo ? `Difficulty distribution: ${diffInfo}.` : ""}
@@ -125,8 +171,7 @@ Return a JSON object with this exact structure:
   "questions": [
     {
       "question_text": "the question",
-      ${question_type === "multiple_choice" ? '"options": ["option A", "option B", "option C", "option D"],' : ""}
-      ${question_type === "true_false" ? '"options": ["True", "False"],' : ""}
+      ${optionsField}
       "correct_answer": "the correct answer",
       "difficulty": "easy" | "medium" | "hard",
       "cognitive_level": "C1" | "C2" | "C3" | "C4" | "C5" | "C6"
@@ -134,7 +179,7 @@ Return a JSON object with this exact structure:
   ]
 }
 
-Make questions educational, varied, and accurate. Each question must have exactly one correct answer.${question_type === "multiple_choice" ? " The correct_answer must exactly match one of the options." : ""}`;
+Make questions educational, varied, and accurate. Each question must have exactly one correct answer.${correctAnswerNote ? " " + correctAnswerNote : ""}`;
 
     // Try each key, each model
     for (const keyRow of keys) {
@@ -145,7 +190,7 @@ Make questions educational, varied, and accurate. Each question must have exactl
           const questions = result.data.questions.map((q: any, i: number) => ({
             question_text: q.question_text || "",
             options: q.options || null,
-            correct_answer: q.correct_answer || "",
+            correct_answer: typeof q.correct_answer === "object" ? JSON.stringify(q.correct_answer) : (q.correct_answer || ""),
             difficulty: q.difficulty || "medium",
             cognitive_level: q.cognitive_level || "C1",
             order_index: i,

@@ -127,6 +127,20 @@ const StudentAssessment = () => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }, []);
 
+  const toggleMcmaAnswer = useCallback((questionId: string, option: string) => {
+    setAnswers((prev) => {
+      const current = prev[questionId] || "[]";
+      let selected: string[];
+      try { selected = JSON.parse(current); } catch { selected = []; }
+      if (selected.includes(option)) {
+        selected = selected.filter((o) => o !== option);
+      } else {
+        selected = [...selected, option];
+      }
+      return { ...prev, [questionId]: JSON.stringify(selected) };
+    });
+  }, []);
+
   const handleSubmit = async () => {
     if (!submissionId || submitting) return;
     setSubmitting(true);
@@ -243,7 +257,50 @@ const StudentAssessment = () => {
               </div>
 
               {/* Answer input based on type */}
-              {currentQuestion.options ? (
+              {currentSection?.question_type === "true_false_statement" ? (
+                /* Statement table for T/F */
+                <div className="rounded-xl border border-border overflow-hidden">
+                  <div className="grid grid-cols-[1fr_60px_60px] text-xs font-bold bg-muted/50">
+                    <div className="p-2">Statement</div>
+                    <div className="p-2 text-center">True</div>
+                    <div className="p-2 text-center">False</div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_60px_60px] text-sm border-t border-border">
+                    <div className="p-3">{currentQuestion.question_text}</div>
+                    <div className="p-2 flex items-center justify-center border-l border-border">
+                      <button onClick={() => setAnswer(currentQuestion.id, "True")}
+                        className={cn("w-6 h-6 rounded-full border-2 transition-all", answers[currentQuestion.id] === "True" ? "border-primary bg-primary" : "border-muted-foreground/40")} />
+                    </div>
+                    <div className="p-2 flex items-center justify-center border-l border-border">
+                      <button onClick={() => setAnswer(currentQuestion.id, "False")}
+                        className={cn("w-6 h-6 rounded-full border-2 transition-all", answers[currentQuestion.id] === "False" ? "border-primary bg-primary" : "border-muted-foreground/40")} />
+                    </div>
+                  </div>
+                </div>
+              ) : currentSection?.question_type === "mcma" && currentQuestion.options ? (
+                /* MCMA checkboxes */
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground italic">Select all correct answers</p>
+                  {(currentQuestion.options as string[]).map((opt, i) => {
+                    let selected: string[];
+                    try { selected = JSON.parse(answers[currentQuestion.id] || "[]"); } catch { selected = []; }
+                    const isChecked = selected.includes(opt);
+                    return (
+                      <button key={i} onClick={() => toggleMcmaAnswer(currentQuestion.id, opt)}
+                        className={cn(
+                          "w-full text-left p-3 rounded-xl border text-sm transition-all flex items-center gap-3",
+                          isChecked ? "border-primary bg-primary/10 font-medium" : "border-border hover:border-primary/50"
+                        )}>
+                        <div className={cn("w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-all",
+                          isChecked ? "border-primary bg-primary" : "border-muted-foreground/40")}>
+                          {isChecked && <span className="text-primary-foreground text-xs font-bold">✓</span>}
+                        </div>
+                        <span><span className="font-bold mr-2">{String.fromCharCode(65 + i)}.</span>{opt}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : currentQuestion.options ? (
                 <div className="space-y-2">
                   {(currentQuestion.options as string[]).map((opt, i) => (
                     <button key={i} onClick={() => setAnswer(currentQuestion.id, opt)}
