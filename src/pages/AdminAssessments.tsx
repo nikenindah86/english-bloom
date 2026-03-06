@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
@@ -21,9 +22,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import {
-  FileCheck, Plus, Trash2, Edit, Loader2, Sparkles, ChevronRight, ChevronLeft, Copy,
+  FileCheck, Plus, Trash2, Edit, Loader2, Sparkles, ChevronRight, ChevronLeft,
 } from "lucide-react";
 import ApiKeyManager from "@/components/admin/ApiKeyManager";
+import TkaBuilder from "@/components/admin/TkaBuilder";
 
 type SectionDraft = {
   id?: string;
@@ -59,6 +61,7 @@ type Assessment = {
   created_at: string;
   section_count?: number;
   question_count?: number;
+  assessment_type?: string;
 };
 
 const QUESTION_TYPES = [
@@ -92,6 +95,10 @@ const AdminAssessments = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("formative");
+
+  // TKA dialog
+  const [tkaDialogOpen, setTkaDialogOpen] = useState(false);
 
   // Step management
   const [step, setStep] = useState(1);
@@ -125,7 +132,6 @@ const AdminAssessments = () => {
   const fetchAssessments = async () => {
     const { data } = await supabase.from("assessments").select("*").order("created_at", { ascending: false });
     if (data) {
-      // Get section + question counts
       const ids = data.map((a) => a.id);
       const { data: secs } = await supabase.from("assessment_sections").select("assessment_id").in("assessment_id", ids);
       const { data: qs } = await supabase.from("assessment_questions").select("assessment_id").in("assessment_id", ids);
@@ -133,7 +139,7 @@ const AdminAssessments = () => {
       const qMap: Record<string, number> = {};
       secs?.forEach((s) => { secMap[s.assessment_id] = (secMap[s.assessment_id] || 0) + 1; });
       qs?.forEach((q) => { qMap[q.assessment_id] = (qMap[q.assessment_id] || 0) + 1; });
-      setAssessments(data.map((a) => ({ ...a, section_count: secMap[a.id] || 0, question_count: qMap[a.id] || 0 })));
+      setAssessments(data.map((a: any) => ({ ...a, section_count: secMap[a.id] || 0, question_count: qMap[a.id] || 0 })));
     }
     setLoading(false);
   };
@@ -157,7 +163,6 @@ const AdminAssessments = () => {
     setClassId(assessment.class_id);
     setDurationMinutes(assessment.duration_minutes.toString());
 
-    // Load sections
     const { data: secs } = await supabase.from("assessment_sections").select("*").eq("assessment_id", assessment.id).order("order_index");
     const loadedSections: SectionDraft[] = (secs || []).map((s, i) => ({
       id: s.id,
@@ -173,7 +178,6 @@ const AdminAssessments = () => {
     }));
     setSections(loadedSections.length > 0 ? loadedSections : [emptySectionDraft(0)]);
 
-    // Load questions per section
     const { data: allQs } = await supabase.from("assessment_questions").select("*").eq("assessment_id", assessment.id).order("order_index");
     const qMap: Record<number, QuestionDraft[]> = {};
     loadedSections.forEach((sec, idx) => {
@@ -191,7 +195,6 @@ const AdminAssessments = () => {
         }));
     });
     setSectionQuestions(qMap);
-
     setCurrentSectionIdx(0);
     setStep(1);
     setDialogOpen(true);
@@ -208,7 +211,6 @@ const AdminAssessments = () => {
     setSectionQuestions((prev) => {
       const next = { ...prev };
       delete next[idx];
-      // Re-index
       const reindexed: Record<number, QuestionDraft[]> = {};
       Object.keys(next).forEach((k) => {
         const ki = parseInt(k);
@@ -243,11 +245,7 @@ const AdminAssessments = () => {
     setGeneratingPassage(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-assessment", {
-        body: {
-          topic: topicText,
-          generate_passage: true,
-          question_type: sections[sectionIdx].question_type,
-        },
+        body: { topic: topicText, generate_passage: true, question_type: sections[sectionIdx].question_type },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -275,11 +273,7 @@ const AdminAssessments = () => {
           topic: topicText,
           question_type: sec.question_type,
           num_questions: sec.num_questions,
-          difficulty_distribution: {
-            easy: sec.difficulty_easy,
-            medium: sec.difficulty_medium,
-            hard: sec.difficulty_hard,
-          },
+          difficulty_distribution: { easy: sec.difficulty_easy, medium: sec.difficulty_medium, hard: sec.difficulty_hard },
           cognitive_levels: sec.cognitive_levels,
           reading_passage: sec.reading_passage || undefined,
         },
@@ -319,12 +313,13 @@ const AdminAssessments = () => {
     setSaving(true);
     try {
       let assessmentId = editingId;
-      const payload = {
+      const payload: any = {
         title,
         description: description || null,
         class_id: classId,
         duration_minutes: parseInt(durationMinutes) || 60,
         is_active: activate,
+        assessment_type: "formative",
       };
 
       if (editingId) {
@@ -336,7 +331,6 @@ const AdminAssessments = () => {
         assessmentId = data!.id;
       }
 
-      // Insert sections
       const sectionRows = sections.map((s, i) => ({
         assessment_id: assessmentId!,
         title: s.title,
@@ -351,7 +345,6 @@ const AdminAssessments = () => {
       }));
       const { data: insertedSections } = await supabase.from("assessment_sections").insert(sectionRows).select();
 
-      // Insert questions
       if (insertedSections) {
         const allQuestionRows: any[] = [];
         insertedSections.forEach((sec, idx) => {
@@ -397,8 +390,12 @@ const AdminAssessments = () => {
   };
 
   const totalQuestionsInBuilder = Object.values(sectionQuestions).reduce((sum, qs) => sum + qs.length, 0);
-
   const currentSection = sections[currentSectionIdx];
+
+  const filteredAssessments = assessments.filter(a => {
+    const type = (a as any).assessment_type || "formative";
+    return activeTab === "formative" ? type === "formative" : type === "tka";
+  });
 
   return (
     <AdminLayout>
@@ -410,41 +407,88 @@ const AdminAssessments = () => {
           </div>
           <div className="flex items-center gap-2">
             <ApiKeyManager />
-            <Button onClick={openCreate} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New Assessment</Button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : assessments.length === 0 ? (
-          <div className="glass rounded-2xl p-8 text-center space-y-2">
-            <FileCheck className="w-10 h-10 mx-auto text-muted-foreground/40" />
-            <p className="text-muted-foreground font-medium">No assessments yet</p>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="formative">Formative-Summative</TabsTrigger>
+              <TabsTrigger value="tka">TKA</TabsTrigger>
+            </TabsList>
+            {activeTab === "formative" ? (
+              <Button onClick={openCreate} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New Assessment</Button>
+            ) : (
+              <Button onClick={() => setTkaDialogOpen(true)} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New TKA</Button>
+            )}
           </div>
-        ) : (
-          <div className="space-y-3">
-            {assessments.map((a) => (
-              <div key={a.id} className="glass rounded-2xl p-4 flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold truncate">{a.title}</h3>
-                    <Badge variant={a.is_active ? "default" : "secondary"} className="text-[10px]">{a.is_active ? "Active" : "Draft"}</Badge>
-                    {classMap[a.class_id] && <Badge variant="outline" className="text-[10px]">{classMap[a.class_id]}</Badge>}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{a.section_count} section{a.section_count !== 1 ? "s" : ""} · {a.question_count} question{a.question_count !== 1 ? "s" : ""} · {a.duration_minutes} min</p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Switch checked={a.is_active} onCheckedChange={() => toggleActive(a)} />
-                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(a)}><Edit className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="w-4 h-4" /></Button>
-                </div>
+
+          <TabsContent value="formative">
+            {loading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : filteredAssessments.length === 0 ? (
+              <div className="glass rounded-2xl p-8 text-center space-y-2">
+                <FileCheck className="w-10 h-10 mx-auto text-muted-foreground/40" />
+                <p className="text-muted-foreground font-medium">No formative assessments yet</p>
               </div>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="space-y-3">
+                {filteredAssessments.map((a) => (
+                  <div key={a.id} className="glass rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold truncate">{a.title}</h3>
+                        <Badge variant={a.is_active ? "default" : "secondary"} className="text-[10px]">{a.is_active ? "Active" : "Draft"}</Badge>
+                        {classMap[a.class_id] && <Badge variant="outline" className="text-[10px]">{classMap[a.class_id]}</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{a.section_count} section{a.section_count !== 1 ? "s" : ""} · {a.question_count} question{a.question_count !== 1 ? "s" : ""} · {a.duration_minutes} min</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Switch checked={a.is_active} onCheckedChange={() => toggleActive(a)} />
+                      <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(a)}><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="tka">
+            {loading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : filteredAssessments.length === 0 ? (
+              <div className="glass rounded-2xl p-8 text-center space-y-2">
+                <FileCheck className="w-10 h-10 mx-auto text-muted-foreground/40" />
+                <p className="text-muted-foreground font-medium">No TKA assessments yet</p>
+                <p className="text-xs text-muted-foreground">TKA = Tes Kemampuan Akademik Bahasa Inggris</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredAssessments.map((a) => (
+                  <div key={a.id} className="glass rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold truncate">{a.title}</h3>
+                        <Badge variant={a.is_active ? "default" : "secondary"} className="text-[10px]">{a.is_active ? "Active" : "Draft"}</Badge>
+                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">TKA</Badge>
+                        {classMap[a.class_id] && <Badge variant="outline" className="text-[10px]">{classMap[a.class_id]}</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{a.question_count} question{a.question_count !== 1 ? "s" : ""} · {a.duration_minutes} min</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Switch checked={a.is_active} onCheckedChange={() => toggleActive(a)} />
+                      <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Builder Dialog */}
+      {/* Formative Builder Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -454,7 +498,6 @@ const AdminAssessments = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {/* Step indicators */}
           <div className="flex items-center gap-2 mb-2">
             {[1, 2, 3].map((s) => (
               <div key={s} className={`h-1.5 flex-1 rounded-full transition-colors ${s <= step ? "bg-primary" : "bg-muted"}`} />
@@ -482,7 +525,6 @@ const AdminAssessments = () => {
 
           {step === 2 && currentSection && (
             <div className="space-y-4">
-              {/* Section tabs */}
               <div className="flex items-center gap-2 flex-wrap">
                 {sections.map((s, i) => (
                   <Button key={i} variant={i === currentSectionIdx ? "default" : "outline"} size="sm" className="rounded-xl text-xs" onClick={() => setCurrentSectionIdx(i)}>
@@ -521,7 +563,6 @@ const AdminAssessments = () => {
                   </div>
                 </div>
 
-                {/* Reading passage toggle */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Checkbox checked={!!currentSection.reading_passage} onCheckedChange={(checked) => updateSection(currentSectionIdx, "reading_passage", checked ? " " : "")} />
@@ -538,7 +579,6 @@ const AdminAssessments = () => {
                   )}
                 </div>
 
-                {/* Difficulty distribution */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Difficulty Distribution</Label>
                   <div className="grid grid-cols-3 gap-2">
@@ -551,7 +591,6 @@ const AdminAssessments = () => {
                   </div>
                 </div>
 
-                {/* Cognitive levels */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold">Cognitive Levels (Bloom's)</Label>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -565,6 +604,11 @@ const AdminAssessments = () => {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Total questions summary */}
+              <div className="text-right text-sm font-bold">
+                Total: {sections.reduce((s, sec) => s + sec.num_questions, 0)} soal
               </div>
             </div>
           )}
@@ -594,7 +638,6 @@ const AdminAssessments = () => {
                       </div>
                     </div>
 
-                    {/* Difficulty & cognitive summary */}
                     <div className="flex items-center gap-2 flex-wrap">
                       {sec.difficulty_easy > 0 && <Badge variant="secondary" className="text-[10px]">Easy: {sec.difficulty_easy}</Badge>}
                       {sec.difficulty_medium > 0 && <Badge variant="secondary" className="text-[10px]">Medium: {sec.difficulty_medium}</Badge>}
@@ -602,7 +645,6 @@ const AdminAssessments = () => {
                       {sec.cognitive_levels.map((l) => <Badge key={l} variant="outline" className="text-[10px]">{l}</Badge>)}
                     </div>
 
-                    {/* Questions preview */}
                     {qs.length > 0 ? (
                       <div className="space-y-1.5 max-h-40 overflow-y-auto">
                         {qs.map((q, qi) => (
@@ -650,6 +692,19 @@ const AdminAssessments = () => {
               </div>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* TKA Builder Dialog */}
+      <Dialog open={tkaDialogOpen} onOpenChange={setTkaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Buat Assessment TKA</DialogTitle>
+            <DialogDescription>
+              Tes Kemampuan Akademik Bahasa Inggris — berdasarkan kerangka asesmen resmi
+            </DialogDescription>
+          </DialogHeader>
+          <TkaBuilder classes={classes} onSaved={() => { setTkaDialogOpen(false); fetchAssessments(); }} />
         </DialogContent>
       </Dialog>
 
