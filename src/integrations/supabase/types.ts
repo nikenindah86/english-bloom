@@ -253,6 +253,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gemini_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          label: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          label?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+        }
+        Relationships: []
+      }
       manual_grades: {
         Row: {
           class_id: string | null

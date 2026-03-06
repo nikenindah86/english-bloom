@@ -1,65 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: AI Quiz Generation with Multiple API Keys & Auto-Fallback
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Concept
-Add an "AI Generate" button in the quiz creation dialog. Teachers can manage multiple Google Gemini API keys. The system tries all text models on one key, then falls through to the next key if rate-limited.
+Rencana implementasi:
 
-### Database Migration
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-**New table: `gemini_api_keys`**
-```
-- id (uuid, PK)
-- api_key (text, encrypted display but stored as text)
-- label (text) — user-friendly name e.g. "Key 1"
-- is_active (boolean, default true)
-- created_at (timestamptz)
-- created_by (uuid, FK → auth.users)
-```
+File yang akan diubah:
 
-RLS: Only admin role can CRUD.
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-### Edge Function: `generate-quiz`
+Detail teknis:
 
-**Input**: `{ topic, num_questions, question_type, language }`
-
-**Logic**:
-1. Fetch all active API keys from `gemini_api_keys` ordered by created_at
-2. Define model fallback order: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.5-pro` → `gemini-2.0-flash` → `gemini-2.0-flash-lite`
-3. For each key, try each model. If 429/exhausted, move to next model. If all models fail on that key, move to next key.
-4. Prompt the model to return structured JSON with questions, options, and correct answers
-5. Return generated questions array
-
-### UI Changes
-
-**`src/pages/AdminQuizzes.tsx`**:
-1. Add **"AI Generate" button** (sparkle icon) in the quiz dialog, next to "Add Question"
-2. Clicking opens a small form: Topic/Subject, Number of questions (5-20), Question type (MCQ/Text), Language
-3. On generate: calls edge function, populates the `questions` state array with AI-generated questions
-4. Teacher can review/edit before saving
-
-**New Settings Section** (in AdminQuizzes or a dialog):
-1. **"Manage API Keys"** button opens a dialog
-2. List existing keys (masked display), add new key (label + key input), toggle active, delete
-3. Stored in `gemini_api_keys` table
-
-### Model Fallback Chain
-
-```text
-Key 1 → gemini-2.5-flash → gemini-2.5-flash-lite → gemini-2.5-pro → gemini-2.0-flash
-  ↓ (all exhausted)
-Key 2 → gemini-2.5-flash → gemini-2.5-flash-lite → ...
-  ↓ (all exhausted)
-Key N → ...
-  ↓ (all exhausted)
-Error: "All API keys exhausted"
-```
-
-### Files
-
-| File | Change |
-|------|--------|
-| Migration | Create `gemini_api_keys` table with RLS |
-| `supabase/functions/generate-quiz/index.ts` | New edge function with multi-key multi-model fallback |
-| `src/pages/AdminQuizzes.tsx` | Add AI Generate button, API key management dialog, generation form |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
