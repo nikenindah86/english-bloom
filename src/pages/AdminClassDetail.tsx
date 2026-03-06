@@ -144,12 +144,12 @@ const AdminClassDetail = () => {
         </div>
 
         {/* Join Code */}
-        <div className="glass rounded-2xl p-4 flex items-center justify-between">
+        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground font-medium">Join Code</p>
             <p className="font-display font-bold text-lg tracking-widest">{cls.join_code || "Not set"}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {cls.join_code && (
               <Button variant="outline" size="sm" className="rounded-xl gap-1" onClick={copyCode}>
                 <Copy className="w-3 h-3" /> Copy

@@ -236,7 +236,7 @@ const AdminManualGrades = () => {
           </div>
           <div className="flex items-center gap-2">
             <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="rounded-xl w-48">
+              <SelectTrigger className="rounded-xl w-full sm:w-48">
                 <SelectValue placeholder="Pilih Kelas" />
               </SelectTrigger>
               <SelectContent>

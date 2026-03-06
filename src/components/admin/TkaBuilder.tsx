@@ -402,7 +402,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Durasi (menit)</Label>
               <Input type="number" value={durationMinutes} onChange={e => setDurationMinutes(e.target.value)} />
@@ -420,7 +420,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
           {/* Add form */}
           <div className="rounded-xl border border-border p-4 bg-muted/20 space-y-3">
             <Label className="font-semibold text-sm">Tambah Bentuk Soal</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs">Jenis Teks</Label>
                 <Select value={formJenisTeks} onValueChange={v => setFormJenisTeks(v as JenisTeks)}>
@@ -444,7 +444,7 @@ const TkaBuilder = ({ classes, onSaved }: TkaBuilderProps) => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label className="text-xs">Jumlah Opsi</Label>
                 <div className="flex gap-2 pt-0.5">

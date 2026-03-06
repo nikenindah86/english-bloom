@@ -84,7 +84,7 @@ const AdminSchedule = () => {
         </div>
 
         <Select value={filterClass} onValueChange={setFilterClass}>
-          <SelectTrigger className="rounded-xl w-48"><SelectValue placeholder="All classes" /></SelectTrigger>
+          <SelectTrigger className="rounded-xl w-full sm:w-48"><SelectValue placeholder="All classes" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All classes</SelectItem>
             {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>)}

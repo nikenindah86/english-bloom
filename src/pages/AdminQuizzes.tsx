@@ -144,9 +144,9 @@ const AdminQuizzes = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div><h2 className="font-display font-bold text-2xl">Quizzes</h2><p className="text-muted-foreground mt-1">Create and manage quizzes</p></div>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div><h2 className="font-display font-bold text-2xl">Quizzes</h2><p className="text-muted-foreground mt-1 text-sm">Create and manage quizzes</p></div>
+          <div className="flex items-center gap-2 flex-wrap">
             <ApiKeyManager />
             <Button onClick={openCreate} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> New Quiz</Button>
           </div>
@@ -205,7 +205,7 @@ const AdminQuizzes = () => {
             {/* Gamification Settings */}
             <div className="border-t border-border pt-4 space-y-3">
               <h4 className="font-semibold text-sm">⚡ Quiz Settings</h4>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Timer per question (seconds)</Label>
                   <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(e.target.value)} placeholder="No timer" className="h-8 text-xs" />
@@ -235,7 +235,7 @@ const AdminQuizzes = () => {
                       {questions.length > 1 && (<Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeQuestion(qIdx)}><Trash2 className="w-3 h-3" /></Button>)}
                     </div>
                     <Textarea value={q.question_text} onChange={(e) => updateQuestion(qIdx, "question_text", e.target.value)} placeholder="Enter question..." rows={2} className="text-sm" />
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-xs">Type</Label>
                         <Select value={q.question_type} onValueChange={(v) => updateQuestion(qIdx, "question_type", v)}>
