@@ -36,6 +36,7 @@ import StudentAssessments from "./pages/StudentAssessments";
 import StudentAssessment from "./pages/StudentAssessment";
 import AdminCourses from "./pages/AdminCourses";
 import AdminCourseDetail from "./pages/AdminCourseDetail";
+import AdminProducts from "./pages/AdminProducts";
 import StudentCourses from "./pages/StudentCourses";
 import StudentCourseDetail from "./pages/StudentCourseDetail";
 import StudentLesson from "./pages/StudentLesson";

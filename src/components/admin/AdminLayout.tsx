@@ -5,7 +5,7 @@ import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   BookOpen, LogOut, Home, Users, FileText, ClipboardList,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -20,13 +20,17 @@ const mainItems = [
 const academicItems = [
   { title: "Classes", url: "/admin/classes", icon: GraduationCap },
   { title: "Students", url: "/admin/students", icon: Users },
-  { title: "Courses", url: "/admin/courses", icon: BookOpen },
   { title: "Materials", url: "/admin/materials", icon: FileText },
   { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
   { title: "Assessments", url: "/admin/assessments", icon: FileCheck },
   { title: "Assignments", url: "/admin/assignments", icon: FileCheck },
   { title: "Lesson Plans", url: "/admin/lesson-plans", icon: NotebookPen },
   { title: "Schedule", url: "/admin/schedule", icon: CalendarDays },
+];
+
+const commerceItems = [
+  { title: "Courses", url: "/admin/courses", icon: BookOpen },
+  { title: "Products", url: "/admin/products", icon: ShoppingBag },
 ];
 
 const assessmentItems = [
@@ -81,6 +85,7 @@ const AdminSidebar = () => {
         {renderGroup("Main", mainItems)}
         {renderGroup("Academic", academicItems)}
         {renderGroup("Assessment", assessmentItems)}
+        {renderGroup("Commerce", commerceItems)}
       </SidebarContent>
     </Sidebar>
   );

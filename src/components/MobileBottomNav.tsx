@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Home, FileText, ClipboardList, Star, User, Users, CheckSquare, MoreHorizontal, BookOpen } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, PenLine, CalendarCheck, FileCheck, CalendarDays, StickyNote, Megaphone, NotebookPen } from "lucide-react";
+import { GraduationCap, PenLine, CalendarCheck, FileCheck, CalendarDays, StickyNote, Megaphone, NotebookPen, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 
 type NavItem = {
@@ -37,6 +37,7 @@ const adminMoreItems: NavItem[] = [
   { label: "Attendance", icon: CalendarCheck, path: "/admin/attendance" },
   { label: "Student Notes", icon: StickyNote, path: "/admin/student-notes" },
   { label: "Lesson Plans", icon: NotebookPen, path: "/admin/lesson-plans" },
+  { label: "Products", icon: ShoppingBag, path: "/admin/products" },
 ];
 
 const MobileBottomNav = ({ role }: { role: "student" | "admin" }) => {
