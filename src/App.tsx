@@ -24,6 +24,7 @@ import AdminSchedule from "./pages/AdminSchedule";
 import AdminStudentNotes from "./pages/AdminStudentNotes";
 import AdminLessonPlans from "./pages/AdminLessonPlans";
 import AdminAssessments from "./pages/AdminAssessments";
+import AdminAnnouncements from "./pages/AdminAnnouncements";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentMaterials from "./pages/StudentMaterials";
 import StudentQuizzes from "./pages/StudentQuizzes";
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/admin/student-notes" element={<ProtectedRoute requiredRole="teacher"><AdminStudentNotes /></ProtectedRoute>} />
             <Route path="/admin/lesson-plans" element={<ProtectedRoute requiredRole="teacher"><AdminLessonPlans /></ProtectedRoute>} />
             <Route path="/admin/assessments" element={<ProtectedRoute requiredRole="teacher"><AdminAssessments /></ProtectedRoute>} />
+            <Route path="/admin/announcements" element={<ProtectedRoute requiredRole="teacher"><AdminAnnouncements /></ProtectedRoute>} />
             <Route path="/admin/courses" element={<ProtectedRoute requiredRole="teacher"><AdminCourses /></ProtectedRoute>} />
             <Route path="/admin/courses/:id" element={<ProtectedRoute requiredRole="teacher"><AdminCourseDetail /></ProtectedRoute>} />
             <Route path="/admin/products" element={<ProtectedRoute requiredRole="teacher"><AdminProducts /></ProtectedRoute>} />
