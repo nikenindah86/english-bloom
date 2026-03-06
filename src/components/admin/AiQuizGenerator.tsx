@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -92,7 +92,7 @@ const AiQuizGenerator = ({ onGenerated }: Props) => {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label className="text-xs">Topik / Mata Pelajaran</Label>
-              <Input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Contoh: Fotosintesis, Perang Dunia II" className="text-sm" />
+              <Textarea value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Contoh: Fotosintesis, Perang Dunia II, Struktur sel dan fungsinya..." className="text-sm resize-y min-h-[60px]" rows={2} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
