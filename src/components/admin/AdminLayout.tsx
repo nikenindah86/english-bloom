@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   BookOpen, LogOut, Home, Users, FileText, ClipboardList,
   CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote,
@@ -11,7 +12,6 @@ import {
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarProvider, SidebarTrigger, useSidebar,
 } from "@/components/ui/sidebar";
-import { useLocation } from "react-router-dom";
 
 const mainItems = [
   { title: "Dashboard", url: "/admin", icon: Home },
@@ -65,7 +65,7 @@ const AdminSidebar = () => {
   );
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarContent className="pt-4">
         <div className="px-4 pb-2 flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -94,7 +94,13 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           <header className="glass-strong sticky top-0 z-40 border-b border-border/50">
             <div className="flex items-center justify-between h-14 px-4">
               <div className="flex items-center gap-2">
-                <SidebarTrigger />
+                <SidebarTrigger className="hidden md:flex" />
+                <div className="flex md:hidden items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BookOpen className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <span className="font-display font-bold text-sm">Teacher</span>
+                </div>
                 <div className="hidden sm:block">
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
@@ -107,10 +113,11 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
           </header>
-          <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
+          <main className="flex-1 px-4 py-6 pb-24 md:pb-6 max-w-5xl mx-auto w-full">
             {children}
           </main>
         </div>
+        <MobileBottomNav role="admin" />
       </div>
     </SidebarProvider>
   );

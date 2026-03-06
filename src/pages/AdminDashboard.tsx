@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AnnouncementSection from "@/components/admin/AnnouncementSection";
-import { Users, ClipboardList, FileText, Megaphone } from "lucide-react";
+import { Users, ClipboardList, FileText, Megaphone, GraduationCap, FileCheck, CalendarDays, CheckSquare, PenLine, CalendarCheck, StickyNote } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const { data: studentCount = 0 } = useQuery({

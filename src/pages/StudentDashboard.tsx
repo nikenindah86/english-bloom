@@ -5,7 +5,7 @@ import StudentLayout from "@/components/student/StudentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal } from "lucide-react";
+import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal, FileText, Star, User, FileCheck, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 
 type LeaderEntry = {
@@ -202,10 +202,36 @@ const StudentDashboard = () => {
   return (
     <StudentLayout>
       <div className="space-y-6">
-        {/* Welcome */}
+      {/* Welcome */}
         <div>
           <h2 className="font-display font-bold text-2xl">Hello! 🌸</h2>
           <p className="text-muted-foreground mt-1">Ready to learn something new today?</p>
+        </div>
+
+        {/* Mobile Icon Grid Menu */}
+        <div className="md:hidden">
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "Materials", icon: FileText, path: "/student/materials", bg: "bg-accent" },
+              { label: "Quizzes", icon: ClipboardList, path: "/student/quizzes", bg: "bg-secondary" },
+              { label: "Assignments", icon: FileCheck, path: "/student/assignments", bg: "bg-blush" },
+              { label: "Schedule", icon: CalendarDays, path: "/student/schedule", bg: "bg-lavender" },
+              { label: "Grades", icon: Star, path: "/student/grades", bg: "bg-accent" },
+              { label: "Profile", icon: User, path: "/student/profile", bg: "bg-secondary" },
+              { label: "Notifications", icon: Megaphone, path: "/student", bg: "bg-blush" },
+            ].map((item) => (
+              <button
+                key={item.path + item.label}
+                onClick={() => navigate(item.path)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl glass hover:shadow-lg transition-all"
+              >
+                <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center`}>
+                  <item.icon className="w-5 h-5 text-foreground/70" />
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Progress Card */}
