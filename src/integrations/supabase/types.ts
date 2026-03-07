@@ -667,6 +667,50 @@ export type Database = {
           },
         ]
       }
+      grading_config: {
+        Row: {
+          assessment_weight: number
+          attendance_weight: number
+          class_id: string
+          created_at: string
+          id: string
+          manual_weight: number
+          passing_grade: number
+          quiz_weight: number
+          updated_at: string
+        }
+        Insert: {
+          assessment_weight?: number
+          attendance_weight?: number
+          class_id: string
+          created_at?: string
+          id?: string
+          manual_weight?: number
+          passing_grade?: number
+          quiz_weight?: number
+          updated_at?: string
+        }
+        Update: {
+          assessment_weight?: number
+          attendance_weight?: number
+          class_id?: string
+          created_at?: string
+          id?: string
+          manual_weight?: number
+          passing_grade?: number
+          quiz_weight?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_config_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_completions: {
         Row: {
           completed_at: string
