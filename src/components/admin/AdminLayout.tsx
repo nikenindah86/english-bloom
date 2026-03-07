@@ -40,6 +40,7 @@ const assessmentItems = [
   { title: "Manual Grades", url: "/admin/manual-grades", icon: PenLine },
   { title: "Passing Grade", url: "/admin/grading-config", icon: Target },
   { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
+  { title: "Attendance History", url: "/admin/attendance-history", icon: CalendarDays },
   { title: "Student Notes", url: "/admin/student-notes", icon: StickyNote },
 ];
 

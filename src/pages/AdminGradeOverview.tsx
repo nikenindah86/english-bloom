@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, TableProperties } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const AdminGradeOverview = () => {
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -249,7 +250,7 @@ const AdminGradeOverview = () => {
             )}
 
             <div className="border rounded-xl overflow-hidden">
-              <div className="overflow-x-auto">
+              <ScrollArea className="w-full">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
@@ -363,7 +364,8 @@ const AdminGradeOverview = () => {
                     )}
                   </TableBody>
                 </Table>
-              </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
           </>
         )}

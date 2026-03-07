@@ -81,7 +81,7 @@ const AdminQuizzes = () => {
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: async () => {
-      const { data } = await supabase.from("classes").select("id, class_name").order("class_name");
+      const { data } = await supabase.from("classes").select("id, class_name").eq("is_archived", false).order("class_name");
       return data || [];
     },
   });
