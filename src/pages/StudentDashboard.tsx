@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Megaphone, ClipboardList, Sparkles, Trophy, Crown, Medal, FileText, Star, User, FileCheck, CalendarDays, PenTool } from "lucide-react";
+import PassingGradeCard from "@/components/student/PassingGradeCard";
 import { format } from "date-fns";
 
 type LeaderEntry = {
@@ -235,12 +236,15 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Passing Grade Score Card */}
+        {classId && user && <PassingGradeCard userId={user.id} classId={classId} />}
+
         {/* Progress Card */}
         <div className="glass rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span className="font-display font-bold text-sm">My Progress</span>
+              <span className="font-display font-bold text-sm">Quiz Progress</span>
             </div>
             <span className="text-3xl">{badge.emoji}</span>
           </div>
