@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StreamComments from "@/components/StreamComments";
+import ClassStudentsTable from "@/components/admin/ClassStudentsTable";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,15 +29,6 @@ const AdminClassDetail = () => {
       const { data, error } = await supabase.from("classes").select("*").eq("id", id!).single();
       if (error) throw error;
       return data;
-    },
-    enabled: !!id,
-  });
-
-  const { data: students = [] } = useQuery({
-    queryKey: ["class-students", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, full_name, avatar_url").eq("class_id", id!);
-      return data || [];
     },
     enabled: !!id,
   });
@@ -196,24 +188,8 @@ const AdminClassDetail = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="students" className="mt-4 space-y-2">
-            <p className="text-sm text-muted-foreground mb-2">{students.length} student{students.length !== 1 ? "s" : ""}</p>
-            {students.length === 0 ? (
-              <div className="glass rounded-2xl p-6 text-center">
-                <p className="text-sm text-muted-foreground">No students in this class</p>
-              </div>
-            ) : (
-              students.map((s) => (
-                <div key={s.id} className="glass rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                    <span className="text-xs font-bold text-secondary-foreground">
-                      {(s.full_name || "?")[0].toUpperCase()}
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium truncate">{s.full_name || "Unnamed"}</p>
-                </div>
-              ))
-            )}
+          <TabsContent value="students" className="mt-4">
+            <ClassStudentsTable classId={id!} className={cls.class_name} />
           </TabsContent>
 
           <TabsContent value="content" className="mt-4 space-y-4">
