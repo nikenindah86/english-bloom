@@ -5,7 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, TableProperties } from "lucide-react";
+import { CheckCircle, XCircle, TableProperties, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { downloadCSV } from "@/lib/csvExport";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -201,6 +203,30 @@ const AdminGradeOverview = () => {
 
   const fmt = (v: number | null) => (v !== null ? v.toFixed(1) : "—");
 
+  const selectedClassName = classes?.find(c => c.id === selectedClassId)?.class_name ?? "Kelas";
+
+  const exportGrades = () => {
+    const headers = [
+      "Nama Siswa",
+      ...(quizzes?.map(q => `Quiz: ${q.title}`) ?? []),
+      ...(assessments?.map(a => `Assessment: ${a.title}`) ?? []),
+      ...manualTitles.map(t => `Manual: ${t}`),
+      "Kehadiran %",
+      "Total",
+      "Status",
+    ];
+    const csvRows = rows.map(r => [
+      r.name,
+      ...(quizzes?.map(q => fmt(r.quizScores[q.id])) ?? []),
+      ...(assessments?.map(a => fmt(r.assessScores[a.id])) ?? []),
+      ...manualTitles.map(t => fmt(r.manualScores[t])),
+      r.attRate !== null ? `${r.attRate.toFixed(0)}%` : "",
+      fmt(r.weightedTotal),
+      r.pass === true ? "Lulus" : r.pass === false ? "Tidak Lulus" : "",
+    ]);
+    downloadCSV(headers, csvRows, `Rekap_Nilai_${selectedClassName}.csv`);
+  };
+
   const loading = !classes;
 
   return (
@@ -211,16 +237,23 @@ const AdminGradeOverview = () => {
             <TableProperties className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-bold font-display">Grade Overview</h1>
           </div>
-          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="Pilih Kelas" />
-            </SelectTrigger>
-            <SelectContent>
-              {classes?.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Pilih Kelas" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes?.map(c => (
+                  <SelectItem key={c.id} value={c.id}>{c.class_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {rows.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportGrades}>
+                <Download className="h-3.5 w-3.5" /> CSV
+              </Button>
+            )}
+          </div>
         </div>
 
         {!selectedClassId && (

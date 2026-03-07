@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Save, MoreVertical, Pencil, Trash2, PenLine } from "lucide-react";
+import { Plus, Save, MoreVertical, Pencil, Trash2, PenLine, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csvExport";
 import { toast } from "sonner";
 
 type CellKey = `${string}__${string}`; // student_id__category_name
@@ -108,6 +109,23 @@ const AdminManualGrades = () => {
 
   const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
   const avg = (arr: number[]) => (arr.length ? sum(arr) / arr.length : 0);
+
+  const selectedClassName = classes.find(c => c.id === selectedClass)?.class_name ?? "Kelas";
+
+  const exportManualGrades = () => {
+    const headers = ["No", "Nama Siswa", ...categories.map(c => `${c.name} (max ${c.max_score})`), "Total", "Rata-rata"];
+    const csvRows = students.map((s, idx) => {
+      const scores = getStudentScores(s.id);
+      return [
+        String(idx + 1),
+        s.full_name || "Unnamed",
+        ...categories.map(c => getScore(s.id, c.name) || ""),
+        scores.length > 0 ? String(sum(scores)) : "",
+        scores.length > 0 ? avg(scores).toFixed(1) : "",
+      ];
+    });
+    downloadCSV(headers, csvRows, `Manual_Grades_${selectedClassName}.csv`);
+  };
 
   // Column mutations
   const saveColMutation = useMutation({
@@ -245,6 +263,11 @@ const AdminManualGrades = () => {
                 ))}
               </SelectContent>
             </Select>
+            {students.length > 0 && categories.length > 0 && (
+              <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs" onClick={exportManualGrades}>
+                <Download className="h-3.5 w-3.5" /> CSV
+              </Button>
+            )}
           </div>
         </div>
 

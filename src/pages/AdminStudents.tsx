@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Users, Search, Pencil, Eye, MapPin, Phone, Calendar, User, Heart } from "lucide-react";
+import { Users, Search, Pencil, Eye, MapPin, Phone, Calendar, User, Heart, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csvExport";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -82,6 +83,21 @@ const AdminStudents = () => {
     (s.full_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const exportStudents = () => {
+    const headers = ["Nama", "Kelas", "Jenis Kelamin", "Tempat Lahir", "Tanggal Lahir", "Telepon", "Nama Orang Tua", "Alamat"];
+    const csvRows = filtered.map(s => [
+      s.full_name || "",
+      s.class_name || "",
+      s.gender ? s.gender.charAt(0).toUpperCase() + s.gender.slice(1) : "",
+      s.place_of_birth || "",
+      s.date_of_birth ? format(new Date(s.date_of_birth), "dd/MM/yyyy") : "",
+      s.phone || "",
+      s.parent_name || "",
+      s.address || "",
+    ]);
+    downloadCSV(headers, csvRows, `Daftar_Siswa.csv`);
+  };
+
   const openEdit = (student: StudentProfile) => {
     setEditStudent(student);
     setEditName(student.full_name || "");
@@ -105,9 +121,16 @@ const AdminStudents = () => {
           <p className="text-muted-foreground mt-1">Manage your student roster</p>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 rounded-xl" />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 rounded-xl" />
+          </div>
+          {filtered.length > 0 && (
+            <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs shrink-0" onClick={exportStudents}>
+              <Download className="h-3.5 w-3.5" /> CSV
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
