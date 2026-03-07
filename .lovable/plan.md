@@ -1,31 +1,39 @@
 
-Masalah yang terlihat dari codebase dan screenshot:
 
-1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
-   - `netlify.toml`
-   - `public/_redirects`
-2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
+## Plan: CSV/Excel Export for Report Pages
 
-Rencana implementasi:
+### Overview
 
-1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
-2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
-3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
-4. Validasi routing React tetap benar dan tidak ubah struktur route existing
-5. Setelah deploy, verifikasi:
-   - buka `/` (cek tombol sudah besar di mobile)
-   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
+Create a reusable CSV download utility and add export buttons to pages that contain tabular report data.
 
-File yang akan diubah:
+### Utility: `src/lib/csvExport.ts`
 
-| File | Perubahan |
-|---|---|
-| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
-| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
-| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
+A helper function that takes headers (string[]) and rows (string[][]), generates a CSV string with BOM (for Excel compatibility with Indonesian characters), and triggers a browser download with a given filename.
 
-Detail teknis:
+### Pages to Add Export Buttons
 
-- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
-- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
-- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
+| Page | What Gets Exported |
+|------|-------------------|
+| **AdminAttendanceHistory** | Attendance table: Student Name + date columns + H/A/L/% summary. Second export for Teaching Journal table. |
+| **AdminGradeOverview** | Full grade table: Student Name + individual quiz/assessment/manual scores + averages + attendance % + weighted total + status |
+| **AdminManualGrades** | Manual grades spreadsheet: Student Name + each category column scores |
+| **AdminStudents** | Student roster: Name, Class, Gender, Place/Date of Birth, Phone, Parent Name, Address |
+
+### Implementation Per Page
+
+1. Add a `Download CSV` button (with `Download` icon from lucide) next to filters
+2. On click, map the current computed `rows` data into CSV-compatible string arrays using the same column structure visible in the table
+3. Call the export utility with an appropriate filename like `Kehadiran_ClassName_March2026.csv`
+
+### Files
+
+| File | Change |
+|------|--------|
+| `src/lib/csvExport.ts` | **New** — reusable `downloadCSV(headers, rows, filename)` |
+| `src/pages/AdminAttendanceHistory.tsx` | Add 2 export buttons (attendance + journal) |
+| `src/pages/AdminGradeOverview.tsx` | Add export button for grade table |
+| `src/pages/AdminManualGrades.tsx` | Add export button for manual grades |
+| `src/pages/AdminStudents.tsx` | Add export button for student roster |
+
+No database changes needed.
+
