@@ -9,11 +9,12 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarCheck, CalendarIcon } from "lucide-react";
+import { CalendarCheck, CalendarIcon, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { downloadCSV } from "@/lib/csvExport";
 
 const AdminAttendanceHistory = () => {
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -105,6 +106,35 @@ const AdminAttendanceHistory = () => {
     });
   }, [students, attMap, uniqueDates]);
 
+  const selectedClassName = classes?.find(c => c.id === selectedClassId)?.class_name ?? "Kelas";
+
+  const exportAttendance = () => {
+    const headers = ["Nama Siswa", ...uniqueDates.map(d => format(parseISO(d), "dd/MM/yyyy")), "Hadir", "Absen", "Terlambat", "%"];
+    const csvRows = rows.map(r => [
+      r.name,
+      ...uniqueDates.map(d => {
+        const st = r.record[d];
+        return st === "present" ? "H" : st === "absent" ? "A" : st === "late" ? "L" : "";
+      }),
+      String(r.present),
+      String(r.absent),
+      String(r.late),
+      r.rate !== null ? `${r.rate.toFixed(0)}%` : "",
+    ]);
+    downloadCSV(headers, csvRows, `Kehadiran_${selectedClassName}_${dateFromStr}_${dateToStr}.csv`);
+  };
+
+  const exportJournal = () => {
+    const headers = ["Tanggal", "Jam Pelajaran", "Topik", "Catatan"];
+    const csvRows = (journals ?? []).map(j => [
+      format(parseISO(j.date), "dd/MM/yyyy"),
+      j.period_label,
+      j.topic,
+      j.notes || "",
+    ]);
+    downloadCSV(headers, csvRows, `Jurnal_${selectedClassName}_${dateFromStr}_${dateToStr}.csv`);
+  };
+
   const statusIcon = (status: string | undefined) => {
     if (status === "present") return <span className="text-green-600 dark:text-green-400 font-bold">✓</span>;
     if (status === "absent") return <span className="text-destructive font-bold">A</span>;
@@ -167,7 +197,14 @@ const AdminAttendanceHistory = () => {
           <>
             {/* Attendance Table */}
             <div>
-              <h2 className="font-display font-bold text-sm mb-2">Daftar Hadir</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-display font-bold text-sm">Daftar Hadir</h2>
+                {rows.length > 0 && (
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportAttendance}>
+                    <Download className="h-3.5 w-3.5" /> CSV
+                  </Button>
+                )}
+              </div>
               <div className="border rounded-xl overflow-hidden">
                 <ScrollArea className="w-full">
                   <Table>
@@ -227,7 +264,14 @@ const AdminAttendanceHistory = () => {
 
             {/* Teaching Journal Table */}
             <div>
-              <h2 className="font-display font-bold text-sm mb-2">Jurnal Mengajar</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-display font-bold text-sm">Jurnal Mengajar</h2>
+                {(journals?.length ?? 0) > 0 && (
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={exportJournal}>
+                    <Download className="h-3.5 w-3.5" /> CSV
+                  </Button>
+                )}
+              </div>
               <div className="border rounded-xl overflow-hidden">
                 <ScrollArea className="w-full">
                   <Table>
