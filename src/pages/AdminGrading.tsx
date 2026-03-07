@@ -315,9 +315,9 @@ const AdminGrading = () => {
                         </Badge>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
-                        {pendingCount > 0 && <span className="text-amber-500">{pendingCount} pending</span>}
+                        {pendingCount > 0 && <span className="text-destructive">{pendingCount} pending</span>}
                         {pendingCount > 0 && gradedCount > 0 && " · "}
-                        {gradedCount > 0 && <span className="text-emerald-500">{gradedCount} graded</span>}
+                        {gradedCount > 0 && <span className="text-primary">{gradedCount} graded</span>}
                         {pendingCount === 0 && gradedCount === 0 && `${group.submissions.length} submissions`}
                       </p>
                     </div>
