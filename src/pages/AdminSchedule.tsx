@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, CalendarDays } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Plus, Trash2, CalendarDays, LayoutList, Table2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadCSV } from "@/lib/csvExport";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 const AdminSchedule = () => {
   const queryClient = useQueryClient();
@@ -20,6 +24,7 @@ const AdminSchedule = () => {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [subject, setSubject] = useState("");
+  const [viewMode, setViewMode] = useState<"cards" | "timetable">("cards");
 
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
@@ -66,11 +71,45 @@ const AdminSchedule = () => {
     },
   });
 
-  // Group by day
+  // Group by day for card view
   const grouped = DAYS.map((name, i) => ({
     name, day: i,
     items: schedules.filter((s: any) => s.day_of_week === i),
   })).filter(g => g.items.length > 0);
+
+  // Timetable helpers
+  const timeSlots = (() => {
+    const set = new Map<string, string>();
+    schedules.forEach((s: any) => {
+      const key = `${s.start_time?.slice(0, 5)}–${s.end_time?.slice(0, 5)}`;
+      set.set(key, s.start_time);
+    });
+    return Array.from(set.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([label]) => label);
+  })();
+
+  const activeDays = (() => {
+    const daySet = new Set<number>();
+    schedules.forEach((s: any) => daySet.add(s.day_of_week));
+    return [1, 2, 3, 4, 5, 6, 0].filter(d => daySet.has(d));
+  })();
+
+  const getCellEntries = (slot: string, day: number) => {
+    const [start, end] = slot.split("–");
+    return schedules.filter((s: any) => s.day_of_week === day && s.start_time?.slice(0, 5) === start && s.end_time?.slice(0, 5) === end);
+  };
+
+  const exportCSV = () => {
+    const headers = ["Hari", "Jam", "Mata Pelajaran", "Kelas"];
+    const rows = schedules.map((s: any) => [
+      HARI[s.day_of_week] || "",
+      `${s.start_time?.slice(0, 5)}–${s.end_time?.slice(0, 5)}`,
+      s.subject || "",
+      (s.classes as any)?.class_name || "",
+    ]);
+    downloadCSV(headers, rows, "Jadwal_Pelajaran.csv");
+  };
 
   return (
     <AdminLayout>
@@ -80,7 +119,32 @@ const AdminSchedule = () => {
             <h2 className="font-display font-bold text-2xl">Schedule</h2>
             <p className="text-muted-foreground mt-1">Weekly class timetable</p>
           </div>
-          <Button onClick={() => setShowCreate(true)} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> Add</Button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl border border-input overflow-hidden">
+              <Button
+                variant={viewMode === "cards" ? "default" : "ghost"}
+                size="icon"
+                className="rounded-none h-9 w-9"
+                onClick={() => setViewMode("cards")}
+              >
+                <LayoutList className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "timetable" ? "default" : "ghost"}
+                size="icon"
+                className="rounded-none h-9 w-9"
+                onClick={() => setViewMode("timetable")}
+              >
+                <Table2 className="w-4 h-4" />
+              </Button>
+            </div>
+            {viewMode === "timetable" && schedules.length > 0 && (
+              <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs" onClick={exportCSV}>
+                <Download className="h-3.5 w-3.5" /> CSV
+              </Button>
+            )}
+            <Button onClick={() => setShowCreate(true)} className="rounded-xl gap-2"><Plus className="w-4 h-4" /> Add</Button>
+          </div>
         </div>
 
         <Select value={filterClass} onValueChange={setFilterClass}>
@@ -91,12 +155,12 @@ const AdminSchedule = () => {
           </SelectContent>
         </Select>
 
-        {grouped.length === 0 ? (
+        {schedules.length === 0 ? (
           <div className="glass rounded-2xl p-8 text-center">
             <CalendarDays className="w-10 h-10 mx-auto text-muted-foreground/40" />
             <p className="text-muted-foreground font-medium mt-2">No schedule entries</p>
           </div>
-        ) : (
+        ) : viewMode === "cards" ? (
           <div className="space-y-4">
             {grouped.map(g => (
               <div key={g.day} className="space-y-2">
@@ -115,6 +179,52 @@ const AdminSchedule = () => {
               </div>
             ))}
           </div>
+        ) : (
+          <ScrollArea className="w-full rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[120px] font-bold">Jam</TableHead>
+                  {activeDays.map(d => (
+                    <TableHead key={d} className="min-w-[130px] text-center font-bold">{HARI[d]}</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {timeSlots.map(slot => (
+                  <TableRow key={slot}>
+                    <TableCell className="font-medium text-xs text-muted-foreground whitespace-nowrap">{slot}</TableCell>
+                    {activeDays.map(d => {
+                      const entries = getCellEntries(slot, d);
+                      return (
+                        <TableCell key={d} className={`text-center ${entries.length > 0 ? "bg-primary/5" : ""}`}>
+                          {entries.length === 0 ? (
+                            <span className="text-muted-foreground/30">—</span>
+                          ) : (
+                            <div className="space-y-1">
+                              {entries.map((e: any) => (
+                                <div key={e.id} className="group relative rounded-lg bg-primary/10 px-2 py-1.5 text-xs">
+                                  <p className="font-medium">{e.subject}</p>
+                                  <p className="text-muted-foreground">{(e.classes as any)?.class_name}</p>
+                                  <button
+                                    onClick={() => deleteMutation.mutate(e.id)}
+                                    className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/10 text-destructive"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
         )}
       </div>
 

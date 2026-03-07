@@ -1,30 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Add Timetable Grid View (Keep Existing Card View)
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Approach
+Rencana implementasi:
 
-Add a **view toggle** (Card / Timetable) so teachers can switch between the existing grouped card view and a new Excel-like timetable grid. Both views use the same data and filters.
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-### Changes to `src/pages/AdminSchedule.tsx`
+File yang akan diubah:
 
-1. **Add view toggle state**: `viewMode` — `"cards"` (default) or `"timetable"`
-2. **Add toggle buttons** next to the Add button (two small icon buttons: `LayoutList` for cards, `Table2` for timetable)
-3. **Keep existing card view** exactly as-is, shown when `viewMode === "cards"`
-4. **Add timetable grid** shown when `viewMode === "timetable"`:
-   - Rows = unique time slots (sorted), Columns = days (Senin–Sabtu)
-   - Cells show subject + class name; multiple entries stacked
-   - Colored background for filled cells, "—" for empty
-   - Hover delete button on each entry
-   - Wrapped in `ScrollArea` + horizontal `ScrollBar`
-5. **Add CSV export button** visible in timetable view — exports flat list (Hari, Jam, Mata Pelajaran, Kelas)
-6. **Use Indonesian day names** in timetable: Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-### Files
+Detail teknis:
 
-| File | Change |
-|------|--------|
-| `src/pages/AdminSchedule.tsx` | Add view toggle + timetable grid view + CSV export |
-
-No database changes needed.
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
