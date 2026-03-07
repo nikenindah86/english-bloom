@@ -89,7 +89,7 @@ const AdminGrading = () => {
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const [{ data: profileData }, { data: quizData }, { data: assessData }] = await Promise.all(promises);
+    
 
     const profileMap: Record<string, string> = {};
     (profileData || []).forEach((p: any) => (profileMap[p.id] = p.full_name || "Unknown"));
