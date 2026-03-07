@@ -5,7 +5,7 @@ import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   BookOpen, LogOut, Home, Users, FileText, ClipboardList, Megaphone,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -36,6 +36,7 @@ const commerceItems = [
 
 const assessmentItems = [
   { title: "Grading", url: "/admin/grading", icon: CheckSquare },
+  { title: "Grade Overview", url: "/admin/grade-overview", icon: TableProperties },
   { title: "Manual Grades", url: "/admin/manual-grades", icon: PenLine },
   { title: "Passing Grade", url: "/admin/grading-config", icon: Target },
   { title: "Attendance", url: "/admin/attendance", icon: CalendarCheck },
