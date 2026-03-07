@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, Plus, Trash2, GripVertical, Image, Edit, Loader2 } from "lucide-react";
+import { ClipboardList, Plus, Trash2, GripVertical, Image, Edit, Loader2, Eye, Copy, Sparkles } from "lucide-react";
 import ApiKeyManager from "@/components/admin/ApiKeyManager";
 import AiQuizGenerator from "@/components/admin/AiQuizGenerator";
 
@@ -34,6 +34,13 @@ type Quiz = {
   created_at: string;
   class_id: string | null;
   question_count?: number;
+  time_limit?: number | null;
+  show_answers_after?: boolean;
+  shuffle_questions?: boolean;
+  shuffle_options?: boolean;
+  points_per_question?: number;
+  scheduled_at?: string | null;
+  expires_at?: string | null;
 };
 
 const emptyQuestion = (index: number): QuestionDraft => ({
@@ -60,6 +67,16 @@ const AdminQuizzes = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+
+  // View Quiz state
+  const [viewQuiz, setViewQuiz] = useState<Quiz | null>(null);
+  const [viewQuestions, setViewQuestions] = useState<QuestionDraft[]>([]);
+  const [viewLoading, setViewLoading] = useState(false);
+
+  // Recreate state
+  const [recreateQuiz, setRecreateQuiz] = useState<Quiz | null>(null);
+  const [recreating, setRecreating] = useState(false);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
 
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
@@ -91,7 +108,7 @@ const AdminQuizzes = () => {
     setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
-  const openEdit = async (quiz: Quiz & { time_limit?: number; show_answers_after?: boolean; shuffle_questions?: boolean; shuffle_options?: boolean; points_per_question?: number; scheduled_at?: string | null; expires_at?: string | null }) => {
+  const openEdit = async (quiz: Quiz) => {
     setEditingQuizId(quiz.id); setTitle(quiz.title); setDescription(quiz.description || ""); setIsActive(quiz.is_active); setClassId(quiz.class_id || "");
     setTimeLimit(quiz.time_limit?.toString() || ""); setShowAnswersAfter(quiz.show_answers_after ?? true);
     setShuffleQuestions(quiz.shuffle_questions ?? false); setShuffleOptions(quiz.shuffle_options ?? false);
@@ -103,6 +120,117 @@ const AdminQuizzes = () => {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
     } else { setQuestions([emptyQuestion(0)]); }
     setDialogOpen(true);
+  };
+
+  // View Quiz handler
+  const handleView = async (quiz: Quiz) => {
+    setViewQuiz(quiz);
+    setViewLoading(true);
+    const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
+    setViewQuestions(
+      data?.map((q) => ({
+        question_text: q.question_text,
+        question_type: q.question_type as any,
+        media_url: q.media_url || "",
+        options: (q.options as string[]) || [],
+        correct_answer: q.correct_answer || "",
+        order_index: q.order_index,
+      })) || []
+    );
+    setViewLoading(false);
+  };
+
+  // Duplicate Quiz handler
+  const handleDuplicate = async (quiz: Quiz) => {
+    setDuplicating(quiz.id);
+    try {
+      const { data: questionsData } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
+      const { data: newQuiz, error } = await supabase.from("quizzes").insert({
+        title: `(Copy) ${quiz.title}`,
+        description: quiz.description,
+        is_active: false,
+        class_id: quiz.class_id,
+        time_limit: quiz.time_limit ?? null,
+        show_answers_after: quiz.show_answers_after ?? true,
+        shuffle_questions: quiz.shuffle_questions ?? false,
+        shuffle_options: quiz.shuffle_options ?? false,
+        points_per_question: quiz.points_per_question ?? 100,
+        scheduled_at: null,
+        expires_at: null,
+      }).select().single();
+
+      if (error || !newQuiz) throw error;
+
+      if (questionsData?.length) {
+        await supabase.from("quiz_questions").insert(
+          questionsData.map((q, i) => ({
+            quiz_id: newQuiz.id,
+            question_text: q.question_text,
+            question_type: q.question_type,
+            media_url: q.media_url,
+            options: q.options,
+            correct_answer: q.correct_answer,
+            order_index: i,
+          }))
+        );
+      }
+      toast({ title: "Quiz duplicated!", description: `"${newQuiz.title}" created as draft.` });
+      fetchQuizzes();
+    } catch {
+      toast({ title: "Failed to duplicate quiz", variant: "destructive" });
+    }
+    setDuplicating(null);
+  };
+
+  // Recreate Quiz with AI handler
+  const handleRecreate = async () => {
+    if (!recreateQuiz) return;
+    setRecreating(true);
+    try {
+      const { data: questionsData } = await supabase.from("quiz_questions").select("*").eq("quiz_id", recreateQuiz.id).order("order_index");
+      const numQuestions = questionsData?.length || 5;
+      const questionType = questionsData?.[0]?.question_type || "multiple_choice";
+      const topic = `${recreateQuiz.title}${recreateQuiz.description ? ` - ${recreateQuiz.description}` : ""}`;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast({ title: "Session expired, please login again", variant: "destructive" }); setRecreating(false); return; }
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-quiz`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ topic, num_questions: numQuestions, question_type: questionType, language: "English" }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok || !data.questions?.length) {
+        toast({ title: data.error || "Failed to generate new questions", variant: "destructive" });
+        setRecreating(false);
+        return;
+      }
+
+      // Delete old questions and insert new ones
+      await supabase.from("quiz_questions").delete().eq("quiz_id", recreateQuiz.id);
+      const newRows = data.questions.map((q: any, i: number) => ({
+        quiz_id: recreateQuiz.id,
+        question_text: q.question_text || "",
+        question_type: q.question_type || questionType,
+        media_url: q.media_url || null,
+        options: q.options || null,
+        correct_answer: q.correct_answer || null,
+        order_index: i,
+      }));
+      await supabase.from("quiz_questions").insert(newRows);
+
+      toast({ title: `${data.questions.length} new questions generated!`, description: `Model: ${data.model_used}` });
+      setRecreateQuiz(null);
+      fetchQuizzes();
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error recreating quiz", variant: "destructive" });
+    }
+    setRecreating(false);
   };
 
   const addQuestion = () => setQuestions((prev) => [...prev, emptyQuestion(prev.length)]);
@@ -182,14 +310,19 @@ const AdminQuizzes = () => {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{quiz.question_count} question{quiz.question_count !== 1 ? "s" : ""}</p>
                   <div className="flex gap-1 flex-wrap mt-0.5">
-                    {(quiz as any).scheduled_at && <Badge variant="outline" className="text-[9px]">📅 {new Date((quiz as any).scheduled_at).toLocaleDateString()}</Badge>}
-                    {(quiz as any).expires_at && <Badge variant={new Date((quiz as any).expires_at) < new Date() ? "destructive" : "outline"} className="text-[9px]">⏰ {new Date((quiz as any).expires_at).toLocaleDateString()}</Badge>}
+                    {quiz.scheduled_at && <Badge variant="outline" className="text-[9px]">📅 {new Date(quiz.scheduled_at).toLocaleDateString()}</Badge>}
+                    {quiz.expires_at && <Badge variant={new Date(quiz.expires_at) < new Date() ? "destructive" : "outline"} className="text-[9px]">⏰ {new Date(quiz.expires_at).toLocaleDateString()}</Badge>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <Switch checked={quiz.is_active} onCheckedChange={() => toggleActive(quiz)} />
-                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(quiz)}><Edit className="w-4 h-4" /></Button>
-                  <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => setDeleteId(quiz.id)}><Trash2 className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => handleView(quiz)} title="View Quiz"><Eye className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => handleDuplicate(quiz)} disabled={duplicating === quiz.id} title="Duplicate Quiz">
+                    {duplicating === quiz.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="rounded-xl text-primary" onClick={() => setRecreateQuiz(quiz)} title="Recreate with AI"><Sparkles className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(quiz)} title="Edit Quiz"><Edit className="w-4 h-4" /></Button>
+                  <Button variant="ghost" size="icon" className="rounded-xl text-destructive" onClick={() => setDeleteId(quiz.id)} title="Delete Quiz"><Trash2 className="w-4 h-4" /></Button>
                 </div>
               </div>
             ))}
@@ -197,6 +330,7 @@ const AdminQuizzes = () => {
         )}
       </div>
 
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -304,6 +438,90 @@ const AdminQuizzes = () => {
         </DialogContent>
       </Dialog>
 
+      {/* View Quiz Dialog */}
+      <Dialog open={!!viewQuiz} onOpenChange={(open) => !open && setViewQuiz(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Eye className="w-4 h-4" /> {viewQuiz?.title}</DialogTitle>
+            <DialogDescription>{viewQuiz?.description || "No description"}</DialogDescription>
+          </DialogHeader>
+          {viewQuiz && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant={viewQuiz.is_active ? "default" : "secondary"}>{viewQuiz.is_active ? "Active" : "Draft"}</Badge>
+                {viewQuiz.class_id && classMap[viewQuiz.class_id] && <Badge variant="outline">{classMap[viewQuiz.class_id]}</Badge>}
+                {viewQuiz.time_limit && <Badge variant="outline">⏱ {viewQuiz.time_limit}s/question</Badge>}
+                {viewQuiz.points_per_question && <Badge variant="outline">⭐ {viewQuiz.points_per_question} pts</Badge>}
+                {viewQuiz.shuffle_questions && <Badge variant="outline">🔀 Shuffle Q</Badge>}
+                {viewQuiz.shuffle_options && <Badge variant="outline">🔀 Shuffle Opt</Badge>}
+              </div>
+              {(viewQuiz.scheduled_at || viewQuiz.expires_at) && (
+                <div className="flex gap-2 flex-wrap text-xs text-muted-foreground">
+                  {viewQuiz.scheduled_at && <span>📅 Starts: {new Date(viewQuiz.scheduled_at).toLocaleString()}</span>}
+                  {viewQuiz.expires_at && <span>⏰ Expires: {new Date(viewQuiz.expires_at).toLocaleString()}</span>}
+                </div>
+              )}
+
+              <div className="border-t border-border pt-3">
+                <h4 className="font-semibold text-sm mb-3">Questions ({viewQuestions.length})</h4>
+                {viewLoading ? (
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                ) : viewQuestions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No questions in this quiz.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {viewQuestions.map((q, i) => (
+                      <div key={i} className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <span className="text-xs font-bold text-muted-foreground mt-0.5">Q{i + 1}</span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{q.question_text}</p>
+                            <Badge variant="outline" className="text-[9px] mt-1">{q.question_type === "multiple_choice" ? "Multiple Choice" : "Text Input"}</Badge>
+                          </div>
+                        </div>
+                        {q.question_type === "multiple_choice" && q.options.length > 0 && (
+                          <div className="ml-6 space-y-1">
+                            {q.options.map((opt, j) => (
+                              <div key={j} className={`text-xs px-2 py-1 rounded-lg ${opt === q.correct_answer ? "bg-primary/10 text-primary font-semibold border border-primary/20" : "text-muted-foreground"}`}>
+                                {String.fromCharCode(65 + j)}. {opt} {opt === q.correct_answer && " ✓"}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {q.question_type === "text_input" && q.correct_answer && (
+                          <div className="ml-6 text-xs text-primary font-medium">Answer: {q.correct_answer}</div>
+                        )}
+                        {q.media_url && <div className="ml-6 text-xs text-muted-foreground">📎 {q.media_url}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Recreate Confirmation */}
+      <AlertDialog open={!!recreateQuiz} onOpenChange={(open) => !open && setRecreateQuiz(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Recreate Quiz with AI?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will replace <strong>all existing questions</strong> in "{recreateQuiz?.title}" with new AI-generated questions on the same topic. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={recreating}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRecreate} disabled={recreating} className="gap-2">
+              {recreating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {recreating ? "Generating..." : "Recreate"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Quiz?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this quiz and all its questions.</AlertDialogDescription></AlertDialogHeader>
