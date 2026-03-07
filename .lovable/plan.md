@@ -1,44 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: View Quiz, Duplicate Quiz, and Recreate (AI) Features
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### 1. View Quiz Dialog (Read-only)
+Rencana implementasi:
 
-**File**: `src/pages/AdminQuizzes.tsx`
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-Add a read-only "View Quiz" dialog that shows quiz details and all questions without editing capability:
-- New state: `viewQuiz` (quiz object or null), `viewQuestions` (questions array)
-- New `Eye` icon button in quiz row actions (before Edit)
-- Dialog shows: title, description, class, status, settings, scheduling info, and all questions with their options/answers in a clean read-only format
+File yang akan diubah:
 
-### 2. Duplicate Quiz
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-**File**: `src/pages/AdminQuizzes.tsx`
+Detail teknis:
 
-Add a `Copy` icon button in quiz row actions:
-- `handleDuplicate(quiz)`: fetches the quiz's questions, inserts a new quiz with title "(Copy) Original Title", `is_active: false`, same settings, then inserts cloned questions
-- After duplicate, refreshes quiz list and shows toast
-
-### 3. Recreate Quiz (AI-powered)
-
-**File**: `src/pages/AdminQuizzes.tsx`
-
-After a quiz is duplicated (or on any existing quiz), add a "Recreate with AI" button:
-- New `Sparkles` icon button in quiz row actions (or inside view dialog)
-- `handleRecreate(quiz)`: fetches quiz questions to determine topic (from title + description), question count, and question type, then calls the existing `generate-quiz` edge function with those same parameters
-- The generated questions replace the duplicated quiz's questions (via delete + insert)
-- This gives teachers a fresh set of questions on the same topic instantly
-- Show a confirmation dialog before recreating: "This will replace all questions with new AI-generated ones on the same topic. Continue?"
-
-### Action Buttons Order (per quiz row)
-
-```text
-[Switch] [Eye/View] [Copy/Duplicate] [Sparkles/Recreate] [Edit] [Delete]
-```
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `src/pages/AdminQuizzes.tsx` | Add View dialog, Duplicate handler, Recreate (AI) handler with confirmation, new icon buttons |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
