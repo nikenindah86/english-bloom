@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Users, Search, Pencil, Eye, MapPin, Phone, Calendar, User, Heart, Download } from "lucide-react";
 import { downloadCSV } from "@/lib/csvExport";
 import { toast } from "sonner";
@@ -26,9 +28,14 @@ interface StudentProfile {
   class_name?: string | null;
 }
 
+const PAGE_SIZE = 10;
+
 const AdminStudents = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [classFilter, setClassFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [editStudent, setEditStudent] = useState<StudentProfile | null>(null);
   const [editName, setEditName] = useState("");
   const [viewStudent, setViewStudent] = useState<StudentProfile | null>(null);
@@ -51,7 +58,6 @@ const AdminStudents = () => {
         .order("created_at", { ascending: false });
       if (profErr) throw profErr;
 
-      // Fetch class names
       const classIds = [...new Set((profiles || []).map(p => p.class_id).filter(Boolean))];
       let classMap: Record<string, string> = {};
       if (classIds.length) {
@@ -66,6 +72,34 @@ const AdminStudents = () => {
     },
   });
 
+  // Derive unique classes for filter
+  const classOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    students.forEach(s => {
+      if (s.class_id && s.class_name) map.set(s.class_id, s.class_name);
+    });
+    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
+  }, [students]);
+
+  // Filter chain: search → class → gender
+  const filtered = useMemo(() => {
+    let result = students;
+    if (search) result = result.filter(s => (s.full_name || "").toLowerCase().includes(search.toLowerCase()));
+    if (classFilter !== "all") result = result.filter(s => s.class_id === classFilter);
+    if (genderFilter !== "all") result = result.filter(s => (s.gender || "").toLowerCase() === genderFilter);
+    return result;
+  }, [students, search, classFilter, genderFilter]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // Reset page when filters change
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handleClassFilter = (v: string) => { setClassFilter(v); setPage(1); };
+  const handleGenderFilter = (v: string) => { setGenderFilter(v); setPage(1); };
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, full_name }: { id: string; full_name: string }) => {
       const { error } = await supabase.from("profiles").update({ full_name }).eq("id", id);
@@ -78,10 +112,6 @@ const AdminStudents = () => {
     },
     onError: () => toast.error("Failed to update student"),
   });
-
-  const filtered = students.filter((s) =>
-    (s.full_name || "").toLowerCase().includes(search.toLowerCase())
-  );
 
   const exportStudents = () => {
     const headers = ["Nama", "Kelas", "Jenis Kelamin", "Tempat Lahir", "Tanggal Lahir", "Telepon", "Nama Orang Tua", "Alamat"];
@@ -121,13 +151,35 @@ const AdminStudents = () => {
           <p className="text-muted-foreground mt-1">Manage your student roster</p>
         </div>
 
-        <div className="flex gap-2">
+        {/* Filters row */}
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search students..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 rounded-xl" />
+            <Input placeholder="Search students..." value={search} onChange={(e) => handleSearch(e.target.value)} className="pl-10 rounded-xl" />
           </div>
+          <Select value={classFilter} onValueChange={handleClassFilter}>
+            <SelectTrigger className="rounded-xl w-full sm:w-[160px]">
+              <SelectValue placeholder="All Classes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              {classOptions.map(([id, name]) => (
+                <SelectItem key={id} value={id}>{name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={genderFilter} onValueChange={handleGenderFilter}>
+            <SelectTrigger className="rounded-xl w-full sm:w-[140px]">
+              <SelectValue placeholder="All Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Gender</SelectItem>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+            </SelectContent>
+          </Select>
           {filtered.length > 0 && (
-            <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs shrink-0" onClick={exportStudents}>
+            <Button variant="outline" size="sm" className="rounded-xl gap-1.5 text-xs shrink-0 h-10" onClick={exportStudents}>
               <Download className="h-3.5 w-3.5" /> CSV
             </Button>
           )}
@@ -141,36 +193,75 @@ const AdminStudents = () => {
           <div className="glass rounded-2xl p-8 text-center space-y-2">
             <Users className="w-10 h-10 mx-auto text-muted-foreground/40" />
             <p className="text-muted-foreground font-medium">
-              {search ? "No students match your search" : "No students registered yet"}
+              {search || classFilter !== "all" || genderFilter !== "all" ? "No students match your filters" : "No students registered yet"}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {filtered.map((student) => (
-              <div key={student.id} className="glass rounded-2xl p-4 flex items-center gap-4">
-                <Avatar className="w-10 h-10 shrink-0">
-                  {student.avatar_url && <AvatarImage src={student.avatar_url} alt={student.full_name || ""} />}
-                  <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
-                    {(student.full_name || "?")[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-display font-bold text-sm truncate">{student.full_name || "Unnamed Student"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {student.class_name || "No class"} · Joined {format(new Date(student.created_at), "MMM d, yyyy")}
-                  </p>
+          <>
+            <p className="text-xs text-muted-foreground">{filtered.length} student{filtered.length !== 1 ? "s" : ""}</p>
+            <div className="space-y-3">
+              {paginated.map((student) => (
+                <div key={student.id} className="glass rounded-2xl p-4 flex items-center gap-4">
+                  <Avatar className="w-10 h-10 shrink-0">
+                    {student.avatar_url && <AvatarImage src={student.avatar_url} alt={student.full_name || ""} />}
+                    <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
+                      {(student.full_name || "?")[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-bold text-sm truncate">{student.full_name || "Unnamed Student"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {student.class_name || "No class"} · Joined {format(new Date(student.created_at), "MMM d, yyyy")}
+                    </p>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setViewStudent(student)}>
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(student)}>
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setViewStudent(student)}>
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(student)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      className={safePage <= 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                    .map((p, idx, arr) => (
+                      <PaginationItem key={p}>
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-2 text-muted-foreground">…</span>
+                        )}
+                        <PaginationLink
+                          isActive={p === safePage}
+                          onClick={() => setPage(p)}
+                          className="cursor-pointer"
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      className={safePage >= totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
         )}
       </div>
 

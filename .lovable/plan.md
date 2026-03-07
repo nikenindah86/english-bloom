@@ -1,42 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Student Filters/Pagination + Class Student Profile Table with CSV Export
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### 1. AdminStudents — Add Class Filter, Gender Filter, and Pagination
+Rencana implementasi:
 
-**File**: `src/pages/AdminStudents.tsx`
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-- Add a **class filter dropdown** (Select) to filter students by class, populated from the fetched class names
-- Add a **gender filter dropdown** (All / Male / Female)
-- Add **client-side pagination** (10 students per page) using the existing Pagination components from `src/components/ui/pagination.tsx`
-- Filter chain: search → class filter → gender filter → paginate
+File yang akan diubah:
 
-### 2. AdminClassDetail — Excel-like Student Profile Table with CSV Export
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-**File**: `src/pages/AdminClassDetail.tsx`
+Detail teknis:
 
-In the "Students" tab, replace the simple name list with a comprehensive Excel-style table showing all student profile fields:
-
-```text
-┌────┬──────────────────┬──────────┬──────────────┬─────────────┬──────────┬──────────────┬──────────┐
-│ No │ Nama             │ Gender   │ Tempat Lahir │ Tgl Lahir   │ Telepon  │ Orang Tua    │ Alamat   │
-├────┼──────────────────┼──────────┼──────────────┼─────────────┼──────────┼──────────────┼──────────┤
-│ 1  │ Alisa anaya      │ Female   │ Jakarta      │ 05/03/2010  │ 08123... │ Budi         │ Jl. ...  │
-└────┴──────────────────┴──────────┴──────────────┴─────────────┴──────────┴──────────────┴──────────┘
-```
-
-Changes:
-- Expand the `profiles` query in the `class-students` queryKey to fetch all profile fields (gender, place_of_birth, date_of_birth, phone, parent_name, address)
-- Render as a horizontally scrollable `Table` with `ScrollArea` + `ScrollBar`
-- Add a **Download CSV** button that exports the class student roster using `downloadCSV`
-- Filename: `Profil_Siswa_{ClassName}.csv`
-
-### Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/pages/AdminStudents.tsx` | Add class/gender filter dropdowns + pagination (10/page) |
-| `src/pages/AdminClassDetail.tsx` | Replace student list with Excel-like table + CSV export |
-
-No database changes needed.
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
