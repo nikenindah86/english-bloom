@@ -27,7 +27,7 @@ const StudentProfile = () => {
     const load = async () => {
       const [{ data }, { data: classData }] = await Promise.all([
         supabase.from("profiles").select("full_name, class_id, place_of_birth, date_of_birth, gender, address, phone, parent_name, avatar_url").eq("id", user.id).single(),
-        supabase.from("classes").select("id, class_name").order("class_name"),
+        supabase.from("classes").select("id, class_name").eq("is_archived", false).order("class_name"),
       ]);
       if (data) {
         setProfile({

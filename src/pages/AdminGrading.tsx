@@ -62,7 +62,7 @@ const AdminGrading = () => {
 
     // Fetch classes, quiz submissions, assessment submissions in parallel
     const [{ data: classesData }, { data: quizSubs }, { data: assessSubs }] = await Promise.all([
-      supabase.from("classes").select("id, class_name").order("class_name"),
+      supabase.from("classes").select("id, class_name").eq("is_archived", false).order("class_name"),
       supabase.from("quiz_submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("assessment_submissions").select("*").order("created_at", { ascending: false }),
     ]);

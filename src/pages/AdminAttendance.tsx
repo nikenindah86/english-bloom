@@ -47,7 +47,7 @@ const AdminAttendance = () => {
 
   // Load classes
   useEffect(() => {
-    supabase.from("classes").select("id, class_name").order("class_name").then(({ data }) => {
+    supabase.from("classes").select("id, class_name").eq("is_archived", false).order("class_name").then(({ data }) => {
       setClasses(data || []);
       setClassesLoading(false);
     });
