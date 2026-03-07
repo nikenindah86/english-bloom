@@ -1,54 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Problem
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-Currently the Grading page shows a flat list of all quiz submissions across all classes. With 100+ students across multiple classes, each taking multiple quizzes/assessments, this becomes an unmanageable wall of items. There's no way to filter by class or group by quiz/assessment.
+Rencana implementasi:
 
-Additionally, the page only shows **quiz** submissions -- it ignores **assessment** submissions entirely, which should also be gradable here.
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-## Plan: Restructured Grading Page with Class & Quiz/Assessment Grouping
+File yang akan diubah:
 
-### New UI Structure
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-```text
-[Class Filter Dropdown: "All Classes" | "Class X" | "Class Y"]
-[Source Tabs: All | Quizzes | Assessments]
-[Status Tabs: All | Pending | Graded]
+Detail teknis:
 
-▼ Jumbled Sentences (Quiz) — 3 pending, 5 graded
-   ├─ Angelina Intan Elvina  [graded] Score: 943
-   ├─ Student B              [pending]
-   └─ Student C              [graded] Score: 85
-
-▼ Midterm Assessment — 2 pending
-   ├─ Student A              [pending]
-   └─ Student D              [pending]
-```
-
-### Changes in `src/pages/AdminGrading.tsx`
-
-1. **Fetch classes** for the filter dropdown (from `classes` table)
-2. **Fetch assessment submissions** alongside quiz submissions -- merge into a unified submission type with a `source` field ("quiz" | "assessment")
-3. **Add class filter state** (`selectedClassId`) -- filter quizzes/assessments by `class_id`
-4. **Add source filter tabs** (All / Quizzes / Assessments)
-5. **Group submissions by quiz/assessment title** using collapsible accordion sections, each showing:
-   - Title + type badge (Quiz/Assessment)
-   - Summary counts (X pending, Y graded)
-   - Expandable list of student submissions inside
-6. **Keep existing expand/grade functionality** for individual submissions within each group
-7. **Assessment answer details**: when expanding an assessment submission, fetch from `assessment_answers` + `assessment_questions` instead of quiz tables
-
-### Data Flow
-
-- Fetch quiz submissions → join with `quizzes.class_id` and `quizzes.title`
-- Fetch assessment submissions → join with `assessments.class_id` and `assessments.title`
-- Merge into unified list with `source` discriminator
-- Group by `quiz_id` or `assessment_id`
-- Filter by selected class and source type
-
-### File Changed
-
-| File | Change |
-|------|--------|
-| `src/pages/AdminGrading.tsx` | Complete restructure: add class filter, source tabs, group-by-quiz/assessment accordion, include assessment submissions |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
