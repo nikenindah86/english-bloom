@@ -77,21 +77,17 @@ const AdminGrading = () => {
     ])];
 
     // Fetch quiz titles, assessment titles, and profiles in parallel
-    const promises: Promise<any>[] = [
+    const [{ data: profileData }, { data: quizData }, { data: assessData }] = await Promise.all([
       allStudentIds.length > 0
-        ? supabase.from("profiles").select("id, full_name").in("id", allStudentIds)
-        : Promise.resolve({ data: [] }),
-    ];
-    if (allQuizIds.length > 0) {
-      promises.push(supabase.from("quizzes").select("id, title, class_id").in("id", allQuizIds));
-    } else {
-      promises.push(Promise.resolve({ data: [] }));
-    }
-    if (allAssessIds.length > 0) {
-      promises.push(supabase.from("assessments").select("id, title, class_id").in("id", allAssessIds));
-    } else {
-      promises.push(Promise.resolve({ data: [] }));
-    }
+        ? supabase.from("profiles").select("id, full_name").in("id", allStudentIds).then(r => r)
+        : Promise.resolve({ data: [] as any[] }),
+      allQuizIds.length > 0
+        ? supabase.from("quizzes").select("id, title, class_id").in("id", allQuizIds).then(r => r)
+        : Promise.resolve({ data: [] as any[] }),
+      allAssessIds.length > 0
+        ? supabase.from("assessments").select("id, title, class_id").in("id", allAssessIds).then(r => r)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
 
     const [{ data: profileData }, { data: quizData }, { data: assessData }] = await Promise.all(promises);
 
