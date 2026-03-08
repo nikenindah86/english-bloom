@@ -256,6 +256,7 @@ const AdminQuizzes = () => {
           points_per_question: parseInt(pointsPerQuestion) || 100,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          anti_cheat: antiCheat,
         }).eq("id", editingQuizId);
         await supabase.from("quiz_questions").delete().eq("quiz_id", editingQuizId);
       } else {
