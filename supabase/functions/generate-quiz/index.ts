@@ -115,7 +115,7 @@ Return a JSON object with this exact structure:
   ]
 }
 
-Make the questions educational, varied in difficulty, and accurate. Each question must have exactly one correct answer.${question_type === "multiple_choice" ? " The correct_answer must exactly match one of the options." : ""}`;
+Make the questions educational, varied in difficulty, and accurate. Each question must have exactly one correct answer.${question_type === "multiple_choice" ? " The correct_answer must exactly match one of the options. IMPORTANT: Vary the position of the correct answer randomly across questions. Do not always place it as the first or second option." : ""}`;
 
     // Try each key, each model
     for (const keyRow of keys) {
