@@ -69,6 +69,31 @@ const StudentQuiz = () => {
   // Shuffled options per question
   const [shuffledOptions, setShuffledOptions] = useState<Record<number, string[]>>({});
 
+  // Anti-cheat: auto-submit handler
+  const handleAntiCheatAutoSubmit = useCallback(() => {
+    if (autoSubmitRef.current) return;
+    autoSubmitRef.current = true;
+    // Submit with current answers
+    const recs = [...answerRecords];
+    // Fill remaining questions with empty answers
+    for (let i = recs.length; i < questions.length; i++) {
+      recs.push({
+        question_id: questions[i].id,
+        answer_text: "",
+        is_correct: questions[i].question_type === "multiple_choice" ? false : null,
+        time_taken_ms: 0,
+        points: 0,
+      });
+    }
+    setPhase("results");
+    submitQuiz(recs);
+  }, [answerRecords, questions]);
+
+  const { violations, requestFullscreen } = useAntiCheat({
+    enabled: phase !== "start" && phase !== "results" && (quiz?.anti_cheat ?? false),
+    onAutoSubmit: handleAntiCheatAutoSubmit,
+  });
+
   useEffect(() => {
     if (!id || !user) return;
     const load = async () => {
