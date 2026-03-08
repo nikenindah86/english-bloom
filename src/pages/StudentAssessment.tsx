@@ -10,8 +10,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Send, Loader2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAntiCheat } from "@/hooks/useAntiCheat";
 
 type Question = {
   id: string;
@@ -50,6 +51,19 @@ const StudentAssessment = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [started, setStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const autoSubmittedRef = useRef(false);
+  const autoSubmitFnRef = useRef<() => void>(() => {});
+
+  const handleAntiCheatAutoSubmit = useCallback(() => {
+    if (autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    autoSubmitFnRef.current();
+  }, []);
+
+  const { violations, requestFullscreen } = useAntiCheat({
+    enabled: started && !submitting && (assessment?.anti_cheat ?? false),
+    onAutoSubmit: handleAntiCheatAutoSubmit,
+  });
 
   // Load assessment data
   useEffect(() => {
@@ -120,6 +134,7 @@ const StudentAssessment = () => {
     if (data) {
       setSubmissionId(data.id);
       setStarted(true);
+      if (assessment?.anti_cheat) requestFullscreen();
     }
   };
 
@@ -197,6 +212,9 @@ const StudentAssessment = () => {
     setConfirmSubmit(false);
   };
 
+  // Keep autoSubmitFnRef updated
+  autoSubmitFnRef.current = handleSubmit;
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -251,6 +269,11 @@ const StudentAssessment = () => {
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {assessment.duration_minutes} min</span>
             <span>{questions.length} questions</span>
           </div>
+          {assessment.anti_cheat && (
+            <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
+              <ShieldAlert className="w-4 h-4" /> Mode Anti-Curang Aktif
+            </Badge>
+          )}
           <Button onClick={handleStart} className="w-full rounded-xl" size="lg">Start Assessment</Button>
           <Button variant="ghost" onClick={() => navigate("/student/assessments")} className="w-full text-xs">Cancel</Button>
         </div>

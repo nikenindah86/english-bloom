@@ -67,6 +67,7 @@ const AdminQuizzes = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [antiCheat, setAntiCheat] = useState(false);
 
   // View Quiz state
   const [viewQuiz, setViewQuiz] = useState<Quiz | null>(null);
@@ -104,7 +105,7 @@ const AdminQuizzes = () => {
   const openCreate = () => {
     setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId("");
     setTimeLimit(""); setShowAnswersAfter(true); setShuffleQuestions(false); setShuffleOptions(false); setPointsPerQuestion("100");
-    setScheduledAt(""); setExpiresAt("");
+    setScheduledAt(""); setExpiresAt(""); setAntiCheat(false);
     setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
@@ -115,6 +116,7 @@ const AdminQuizzes = () => {
     setPointsPerQuestion((quiz.points_per_question ?? 100).toString());
     setScheduledAt(quiz.scheduled_at ? new Date(quiz.scheduled_at).toISOString().slice(0, 16) : "");
     setExpiresAt(quiz.expires_at ? new Date(quiz.expires_at).toISOString().slice(0, 16) : "");
+    setAntiCheat((quiz as any).anti_cheat ?? false);
     const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
     if (data && data.length > 0) {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
@@ -254,6 +256,7 @@ const AdminQuizzes = () => {
           points_per_question: parseInt(pointsPerQuestion) || 100,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          anti_cheat: antiCheat,
         }).eq("id", editingQuizId);
         await supabase.from("quiz_questions").delete().eq("quiz_id", editingQuizId);
       } else {
@@ -264,6 +267,7 @@ const AdminQuizzes = () => {
           points_per_question: parseInt(pointsPerQuestion) || 100,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          anti_cheat: antiCheat,
         }).select().single();
         quizId = data!.id;
       }
@@ -380,6 +384,7 @@ const AdminQuizzes = () => {
               <div className="flex items-center gap-2"><Switch checked={showAnswersAfter} onCheckedChange={setShowAnswersAfter} /><Label className="text-xs">Show correct answer after each question</Label></div>
               <div className="flex items-center gap-2"><Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} /><Label className="text-xs">Shuffle question order</Label></div>
               <div className="flex items-center gap-2"><Switch checked={shuffleOptions} onCheckedChange={setShuffleOptions} /><Label className="text-xs">Shuffle MCQ options</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={antiCheat} onCheckedChange={setAntiCheat} /><Label className="text-xs">🛡️ Anti-Cheat Mode (fullscreen, tab detection, disable copy)</Label></div>
             </div>
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3 gap-2">

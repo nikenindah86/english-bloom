@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Loader2, Play, Zap, Clock, Trophy, ArrowRight } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Play, Zap, Clock, Trophy, ArrowRight, ShieldAlert } from "lucide-react";
 import QuizLeaderboard from "@/components/QuizLeaderboard";
+import { useAntiCheat } from "@/hooks/useAntiCheat";
+import { Badge } from "@/components/ui/badge";
 
 const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
 
@@ -57,6 +59,7 @@ const StudentQuiz = () => {
   const [streak, setStreak] = useState(0);
   const [textAnswer, setTextAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const autoSubmitRef = useRef(false);
 
   // Timer
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -65,6 +68,31 @@ const StudentQuiz = () => {
 
   // Shuffled options per question
   const [shuffledOptions, setShuffledOptions] = useState<Record<number, string[]>>({});
+
+  // Anti-cheat: auto-submit handler
+  const handleAntiCheatAutoSubmit = useCallback(() => {
+    if (autoSubmitRef.current) return;
+    autoSubmitRef.current = true;
+    // Submit with current answers
+    const recs = [...answerRecords];
+    // Fill remaining questions with empty answers
+    for (let i = recs.length; i < questions.length; i++) {
+      recs.push({
+        question_id: questions[i].id,
+        answer_text: "",
+        is_correct: questions[i].question_type === "multiple_choice" ? false : null,
+        time_taken_ms: 0,
+        points: 0,
+      });
+    }
+    setPhase("results");
+    submitQuiz(recs);
+  }, [answerRecords, questions]);
+
+  const { violations, requestFullscreen } = useAntiCheat({
+    enabled: phase !== "start" && phase !== "results" && (quiz?.anti_cheat ?? false),
+    onAutoSubmit: handleAntiCheatAutoSubmit,
+  });
 
   useEffect(() => {
     if (!id || !user) return;
@@ -85,6 +113,7 @@ const StudentQuiz = () => {
 
   const startQuiz = () => {
     if (!quiz || questions.length === 0) return;
+    if (quiz.anti_cheat) requestFullscreen();
     let qs = [...questions];
     if (quiz.shuffle_questions) qs = shuffleArray(qs);
 
@@ -308,6 +337,11 @@ const StudentQuiz = () => {
             {quiz.time_limit && <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {quiz.time_limit}s/question</span>}
             <span className="flex items-center gap-1"><Trophy className="w-4 h-4" /> {quiz.points_per_question || 100} pts each</span>
           </div>
+          {quiz.anti_cheat && (
+            <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
+              <ShieldAlert className="w-4 h-4" /> Mode Anti-Curang Aktif
+            </Badge>
+          )}
           <Button onClick={startQuiz} size="lg" className="rounded-xl gap-2 h-14 px-8 text-lg font-bold">
             <Play className="w-5 h-5" /> Start Quiz
           </Button>

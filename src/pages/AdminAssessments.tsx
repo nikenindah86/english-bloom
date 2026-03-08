@@ -110,6 +110,7 @@ const AdminAssessments = () => {
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [scheduledAt, setScheduledAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [antiCheat, setAntiCheat] = useState(false);
 
   // Multi-class assignment for formative
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -192,7 +193,7 @@ const AdminAssessments = () => {
   const openCreate = () => {
     setEditingId(null);
     setTitle(""); setTopic(""); setDescription(""); setSelectedClassIds([]); setDurationMinutes("60");
-    setScheduledAt(""); setExpiresAt("");
+    setScheduledAt(""); setExpiresAt(""); setAntiCheat(false);
     setSelectedStudents([]); setShowStudentAssign(false);
     setSections([emptySectionDraft(0)]);
     setCurrentSectionIdx(0);
@@ -209,6 +210,7 @@ const AdminAssessments = () => {
     setDurationMinutes(assessment.duration_minutes.toString());
     setScheduledAt((assessment as any).scheduled_at ? new Date((assessment as any).scheduled_at).toISOString().slice(0, 16) : "");
     setExpiresAt((assessment as any).expires_at ? new Date((assessment as any).expires_at).toISOString().slice(0, 16) : "");
+    setAntiCheat((assessment as any).anti_cheat ?? false);
     setSelectedStudents([]);
     setShowStudentAssign(false);
 
@@ -390,6 +392,7 @@ const AdminAssessments = () => {
         assessment_type: "formative",
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        anti_cheat: antiCheat,
       };
 
       if (editingId) {
@@ -678,6 +681,11 @@ const AdminAssessments = () => {
                     <Input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="h-8 text-xs" />
                   </div>
                 </div>
+              </div>
+
+              {/* Anti-Cheat */}
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center gap-2"><Switch checked={antiCheat} onCheckedChange={setAntiCheat} /><Label className="text-xs">🛡️ Anti-Cheat Mode (fullscreen, tab detection, disable copy)</Label></div>
               </div>
             </div>
           )}
