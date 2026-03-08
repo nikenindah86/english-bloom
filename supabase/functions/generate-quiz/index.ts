@@ -126,7 +126,7 @@ Make the questions educational, varied in difficulty, and accurate. Each questio
           const questions = result.data.questions.map((q: any, i: number) => ({
             question_text: q.question_text || "",
             question_type: question_type,
-            options: q.options || ["", ""],
+            options: question_type === "multiple_choice" && q.options ? shuffleArray(q.options) : (q.options || ["", ""]),
             correct_answer: q.correct_answer || "",
             media_url: "",
             order_index: i,
