@@ -193,7 +193,7 @@ const AdminAssessments = () => {
   const openCreate = () => {
     setEditingId(null);
     setTitle(""); setTopic(""); setDescription(""); setSelectedClassIds([]); setDurationMinutes("60");
-    setScheduledAt(""); setExpiresAt("");
+    setScheduledAt(""); setExpiresAt(""); setAntiCheat(false);
     setSelectedStudents([]); setShowStudentAssign(false);
     setSections([emptySectionDraft(0)]);
     setCurrentSectionIdx(0);
