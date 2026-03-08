@@ -15,6 +15,15 @@ const MODELS = [
   "gemini-2.0-flash-lite",
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function tryGenerate(apiKey: string, model: string, prompt: string): Promise<{ ok: boolean; data?: any; rateLimited?: boolean }> {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -106,7 +115,7 @@ Return a JSON object with this exact structure:
   ]
 }
 
-Make the questions educational, varied in difficulty, and accurate. Each question must have exactly one correct answer.${question_type === "multiple_choice" ? " The correct_answer must exactly match one of the options." : ""}`;
+Make the questions educational, varied in difficulty, and accurate. Each question must have exactly one correct answer.${question_type === "multiple_choice" ? " The correct_answer must exactly match one of the options. IMPORTANT: Vary the position of the correct answer randomly across questions. Do not always place it as the first or second option." : ""}`;
 
     // Try each key, each model
     for (const keyRow of keys) {
@@ -117,7 +126,7 @@ Make the questions educational, varied in difficulty, and accurate. Each questio
           const questions = result.data.questions.map((q: any, i: number) => ({
             question_text: q.question_text || "",
             question_type: question_type,
-            options: q.options || ["", ""],
+            options: question_type === "multiple_choice" && q.options ? shuffleArray(q.options) : (q.options || ["", ""]),
             correct_answer: q.correct_answer || "",
             media_url: "",
             order_index: i,
