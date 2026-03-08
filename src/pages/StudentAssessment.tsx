@@ -10,8 +10,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, ChevronLeft, ChevronRight, Send, Loader2 } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Send, Loader2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAntiCheat } from "@/hooks/useAntiCheat";
 
 type Question = {
   id: string;
