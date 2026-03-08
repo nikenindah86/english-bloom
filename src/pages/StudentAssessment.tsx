@@ -51,6 +51,18 @@ const StudentAssessment = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [started, setStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const autoSubmittedRef = useRef(false);
+
+  const handleAntiCheatAutoSubmit = useCallback(() => {
+    if (autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    handleSubmitDirect();
+  }, []);
+
+  const { violations, requestFullscreen } = useAntiCheat({
+    enabled: started && !submitting && (assessment?.anti_cheat ?? false),
+    onAutoSubmit: handleAntiCheatAutoSubmit,
+  });
 
   // Load assessment data
   useEffect(() => {
