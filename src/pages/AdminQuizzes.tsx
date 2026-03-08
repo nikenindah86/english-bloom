@@ -67,6 +67,7 @@ const AdminQuizzes = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [antiCheat, setAntiCheat] = useState(false);
 
   // View Quiz state
   const [viewQuiz, setViewQuiz] = useState<Quiz | null>(null);
