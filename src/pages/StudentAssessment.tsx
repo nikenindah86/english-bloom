@@ -52,11 +52,12 @@ const StudentAssessment = () => {
   const [started, setStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const autoSubmittedRef = useRef(false);
+  const autoSubmitFnRef = useRef<() => void>(() => {});
 
   const handleAntiCheatAutoSubmit = useCallback(() => {
     if (autoSubmittedRef.current) return;
     autoSubmittedRef.current = true;
-    handleSubmitDirect();
+    autoSubmitFnRef.current();
   }, []);
 
   const { violations, requestFullscreen } = useAntiCheat({
