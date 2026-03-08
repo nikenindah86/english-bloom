@@ -110,6 +110,7 @@ const AdminAssessments = () => {
   const [durationMinutes, setDurationMinutes] = useState("60");
   const [scheduledAt, setScheduledAt] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [antiCheat, setAntiCheat] = useState(false);
 
   // Multi-class assignment for formative
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
