@@ -211,6 +211,9 @@ const StudentAssessment = () => {
     setConfirmSubmit(false);
   };
 
+  // Keep autoSubmitFnRef updated
+  autoSubmitFnRef.current = handleSubmit;
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
