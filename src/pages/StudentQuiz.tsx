@@ -113,6 +113,7 @@ const StudentQuiz = () => {
 
   const startQuiz = () => {
     if (!quiz || questions.length === 0) return;
+    if (quiz.anti_cheat) requestFullscreen();
     let qs = [...questions];
     if (quiz.shuffle_questions) qs = shuffleArray(qs);
 
