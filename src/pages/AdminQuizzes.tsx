@@ -267,6 +267,7 @@ const AdminQuizzes = () => {
           points_per_question: parseInt(pointsPerQuestion) || 100,
           scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          anti_cheat: antiCheat,
         }).select().single();
         quizId = data!.id;
       }
