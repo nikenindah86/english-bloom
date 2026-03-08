@@ -298,6 +298,7 @@ export type Database = {
       }
       assessments: {
         Row: {
+          anti_cheat: boolean
           assessment_type: string
           class_id: string | null
           created_at: string
@@ -310,6 +311,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          anti_cheat?: boolean
           assessment_type?: string
           class_id?: string | null
           created_at?: string
@@ -322,6 +324,7 @@ export type Database = {
           title: string
         }
         Update: {
+          anti_cheat?: boolean
           assessment_type?: string
           class_id?: string | null
           created_at?: string
@@ -1148,6 +1151,7 @@ export type Database = {
       }
       quizzes: {
         Row: {
+          anti_cheat: boolean
           class_id: string | null
           created_at: string
           description: string | null
@@ -1163,6 +1167,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          anti_cheat?: boolean
           class_id?: string | null
           created_at?: string
           description?: string | null
@@ -1178,6 +1183,7 @@ export type Database = {
           title: string
         }
         Update: {
+          anti_cheat?: boolean
           class_id?: string | null
           created_at?: string
           description?: string | null
