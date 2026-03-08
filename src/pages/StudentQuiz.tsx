@@ -337,6 +337,11 @@ const StudentQuiz = () => {
             {quiz.time_limit && <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {quiz.time_limit}s/question</span>}
             <span className="flex items-center gap-1"><Trophy className="w-4 h-4" /> {quiz.points_per_question || 100} pts each</span>
           </div>
+          {quiz.anti_cheat && (
+            <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
+              <ShieldAlert className="w-4 h-4" /> Mode Anti-Curang Aktif
+            </Badge>
+          )}
           <Button onClick={startQuiz} size="lg" className="rounded-xl gap-2 h-14 px-8 text-lg font-bold">
             <Play className="w-5 h-5" /> Start Quiz
           </Button>
