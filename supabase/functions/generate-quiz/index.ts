@@ -15,6 +15,15 @@ const MODELS = [
   "gemini-2.0-flash-lite",
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function tryGenerate(apiKey: string, model: string, prompt: string): Promise<{ ok: boolean; data?: any; rateLimited?: boolean }> {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
