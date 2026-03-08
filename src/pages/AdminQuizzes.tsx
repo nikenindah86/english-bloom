@@ -384,6 +384,7 @@ const AdminQuizzes = () => {
               <div className="flex items-center gap-2"><Switch checked={showAnswersAfter} onCheckedChange={setShowAnswersAfter} /><Label className="text-xs">Show correct answer after each question</Label></div>
               <div className="flex items-center gap-2"><Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} /><Label className="text-xs">Shuffle question order</Label></div>
               <div className="flex items-center gap-2"><Switch checked={shuffleOptions} onCheckedChange={setShuffleOptions} /><Label className="text-xs">Shuffle MCQ options</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={antiCheat} onCheckedChange={setAntiCheat} /><Label className="text-xs">🛡️ Anti-Cheat Mode (fullscreen, tab detection, disable copy)</Label></div>
             </div>
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3 gap-2">
