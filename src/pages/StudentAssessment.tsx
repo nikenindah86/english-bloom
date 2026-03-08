@@ -156,6 +156,7 @@ const StudentAssessment = () => {
   }, []);
 
   const handleSubmit = async () => {
+    autoSubmitFnRef.current = handleSubmit;
     if (!submissionId || submitting) return;
     setSubmitting(true);
     clearInterval(timerRef.current);
