@@ -682,6 +682,11 @@ const AdminAssessments = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Anti-Cheat */}
+              <div className="border-t border-border pt-3">
+                <div className="flex items-center gap-2"><Switch checked={antiCheat} onCheckedChange={setAntiCheat} /><Label className="text-xs">🛡️ Anti-Cheat Mode (fullscreen, tab detection, disable copy)</Label></div>
+              </div>
             </div>
           )}
 
