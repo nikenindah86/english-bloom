@@ -105,7 +105,7 @@ const AdminQuizzes = () => {
   const openCreate = () => {
     setEditingQuizId(null); setTitle(""); setDescription(""); setIsActive(false); setClassId("");
     setTimeLimit(""); setShowAnswersAfter(true); setShuffleQuestions(false); setShuffleOptions(false); setPointsPerQuestion("100");
-    setScheduledAt(""); setExpiresAt("");
+    setScheduledAt(""); setExpiresAt(""); setAntiCheat(false);
     setQuestions([emptyQuestion(0)]); setDialogOpen(true);
   };
 
