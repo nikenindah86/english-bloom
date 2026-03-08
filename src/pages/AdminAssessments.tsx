@@ -392,6 +392,7 @@ const AdminAssessments = () => {
         assessment_type: "formative",
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
         expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+        anti_cheat: antiCheat,
       };
 
       if (editingId) {
