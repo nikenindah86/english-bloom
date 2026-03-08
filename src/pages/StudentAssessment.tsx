@@ -134,6 +134,7 @@ const StudentAssessment = () => {
     if (data) {
       setSubmissionId(data.id);
       setStarted(true);
+      if (assessment?.anti_cheat) requestFullscreen();
     }
   };
 
