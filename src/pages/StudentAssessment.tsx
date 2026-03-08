@@ -269,6 +269,11 @@ const StudentAssessment = () => {
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {assessment.duration_minutes} min</span>
             <span>{questions.length} questions</span>
           </div>
+          {assessment.anti_cheat && (
+            <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
+              <ShieldAlert className="w-4 h-4" /> Mode Anti-Curang Aktif
+            </Badge>
+          )}
           <Button onClick={handleStart} className="w-full rounded-xl" size="lg">Start Assessment</Button>
           <Button variant="ghost" onClick={() => navigate("/student/assessments")} className="w-full text-xs">Cancel</Button>
         </div>
