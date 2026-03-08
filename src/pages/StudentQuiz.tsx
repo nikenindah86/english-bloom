@@ -59,6 +59,7 @@ const StudentQuiz = () => {
   const [streak, setStreak] = useState(0);
   const [textAnswer, setTextAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const autoSubmitRef = useRef(false);
 
   // Timer
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
