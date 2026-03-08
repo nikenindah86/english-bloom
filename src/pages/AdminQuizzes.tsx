@@ -116,6 +116,7 @@ const AdminQuizzes = () => {
     setPointsPerQuestion((quiz.points_per_question ?? 100).toString());
     setScheduledAt(quiz.scheduled_at ? new Date(quiz.scheduled_at).toISOString().slice(0, 16) : "");
     setExpiresAt(quiz.expires_at ? new Date(quiz.expires_at).toISOString().slice(0, 16) : "");
+    setAntiCheat((quiz as any).anti_cheat ?? false);
     const { data } = await supabase.from("quiz_questions").select("*").eq("quiz_id", quiz.id).order("order_index");
     if (data && data.length > 0) {
       setQuestions(data.map((q) => ({ id: q.id, question_text: q.question_text, question_type: q.question_type as any, media_url: q.media_url || "", options: (q.options as string[]) || ["", ""], correct_answer: q.correct_answer || "", order_index: q.order_index })));
