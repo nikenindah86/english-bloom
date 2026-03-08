@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Loader2, Play, Zap, Clock, Trophy, ArrowRight } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, Play, Zap, Clock, Trophy, ArrowRight, ShieldAlert } from "lucide-react";
 import QuizLeaderboard from "@/components/QuizLeaderboard";
+import { useAntiCheat } from "@/hooks/useAntiCheat";
+import { Badge } from "@/components/ui/badge";
 
 const isImageUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i.test(url);
 
