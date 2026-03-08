@@ -210,6 +210,7 @@ const AdminAssessments = () => {
     setDurationMinutes(assessment.duration_minutes.toString());
     setScheduledAt((assessment as any).scheduled_at ? new Date((assessment as any).scheduled_at).toISOString().slice(0, 16) : "");
     setExpiresAt((assessment as any).expires_at ? new Date((assessment as any).expires_at).toISOString().slice(0, 16) : "");
+    setAntiCheat((assessment as any).anti_cheat ?? false);
     setSelectedStudents([]);
     setShowStudentAssign(false);
 
