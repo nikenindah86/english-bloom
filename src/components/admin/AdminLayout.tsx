@@ -4,9 +4,10 @@ import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
-  BookOpen, LogOut, Home, Users, FileText, ClipboardList, Megaphone,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties,
+  LogOut, Home, Users, FileText, ClipboardList, Megaphone,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties, BookOpen,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
