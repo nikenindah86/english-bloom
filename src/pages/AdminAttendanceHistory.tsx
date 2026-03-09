@@ -93,16 +93,18 @@ const AdminAttendanceHistory = () => {
     if (!students) return [];
     return students.map(s => {
       const record = attMap[s.id] || {};
-      let present = 0, absent = 0, late = 0;
+      let hadir = 0, izin = 0, sakit = 0, alpha = 0;
       uniqueDates.forEach(d => {
         const st = record[d];
-        if (st === "present") present++;
-        else if (st === "absent") absent++;
-        else if (st === "late") late++;
+        // Support both old (present/absent/late) and new (hadir/izin/sakit/alpha) statuses
+        if (st === "hadir" || st === "present") hadir++;
+        else if (st === "izin") izin++;
+        else if (st === "sakit" || st === "late") sakit++;
+        else if (st === "alpha" || st === "absent") alpha++;
       });
-      const total = present + absent + late;
-      const rate = total > 0 ? (present / total) * 100 : null;
-      return { id: s.id, name: s.full_name || "—", record, present, absent, late, total, rate };
+      const total = hadir + izin + sakit + alpha;
+      const rate = total > 0 ? (hadir / total) * 100 : null;
+      return { id: s.id, name: s.full_name || "—", record, hadir, izin, sakit, alpha, total, rate };
     });
   }, [students, attMap, uniqueDates]);
 
