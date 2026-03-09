@@ -290,17 +290,17 @@ const AdminAttendance = () => {
                 >
                   <span className="text-sm font-medium truncate flex-1">{student.full_name}</span>
                   <div className="flex gap-1">
-                    {(["present", "absent", "late"] as const).map((s) => (
+                    {(["hadir", "izin", "sakit", "alpha"] as const).map((s) => (
                       <button
                         key={s}
                         onClick={() => setStatus(student.id, s)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all capitalize ${
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
                           student.status === s
                             ? statusColors[s]
                             : "bg-muted/50 text-muted-foreground border-transparent hover:border-border"
                         }`}
                       >
-                        {s}
+                        {statusLabels[s]}
                       </button>
                     ))}
                   </div>

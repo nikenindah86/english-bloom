@@ -101,8 +101,8 @@ const PassingGradeCard = ({ userId, classId }: Props) => {
       const manualScores = (manualRes.data || []).map(g => (Number(g.score) / Number(g.max_score)) * 100);
       const manualAvg = manualScores.length > 0 ? manualScores.reduce((a, b) => a + b, 0) / manualScores.length : 0;
 
-      // Attendance rate (0-100)
-      const presentCount = (attRes.data || []).length;
+      // Attendance rate (0-100) - combine hadir and present counts
+      const presentCount = (attHadirRes.data || []).length + (attPresentRes.data || []).length;
       const totalCount = (attTotalRes.data || []).length;
       const attendanceRate = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
 

@@ -256,12 +256,13 @@ const AdminAttendanceHistory = () => {
                         <TableRow className="border-t-2 border-primary/30 bg-muted/40 font-semibold">
                           <TableCell className="sticky left-0 z-10 bg-muted/60 text-[10px] uppercase tracking-wider border-r">Total</TableCell>
                           {uniqueDates.map(d => {
-                            const p = rows.filter(r => r.record[d] === "present").length;
-                            return <TableCell key={d} className="text-center text-[10px] tabular-nums">{p}/{rows.length}</TableCell>;
+                            const h = rows.filter(r => r.record[d] === "hadir" || r.record[d] === "present").length;
+                            return <TableCell key={d} className="text-center text-[10px] tabular-nums">{h}/{rows.length}</TableCell>;
                           })}
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.present, 0)}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.absent, 0)}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.late, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.hadir, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.izin, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.sakit, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.alpha, 0)}</TableCell>
                           <TableCell className="text-center text-xs tabular-nums font-bold">
                             {rows.length ? `${(rows.reduce((a, r) => a + (r.rate ?? 0), 0) / rows.length).toFixed(0)}%` : "—"}
                           </TableCell>
