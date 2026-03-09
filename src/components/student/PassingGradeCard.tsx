@@ -79,11 +79,12 @@ const PassingGradeCard = ({ userId, classId }: Props) => {
       setConfig(cfg);
       setPassingGrade(Number(cfg.passing_grade));
 
-      // Fetch all data in parallel
-      const [quizRes, assessRes, manualRes, attRes, attTotalRes] = await Promise.all([
+      // Fetch all data in parallel - support both old (present) and new (hadir) statuses
+      const [quizRes, assessRes, manualRes, attHadirRes, attPresentRes, attTotalRes] = await Promise.all([
         supabase.from("quiz_submissions").select("score").eq("student_id", userId).eq("status", "graded").not("score", "is", null),
         supabase.from("assessment_submissions").select("score").eq("student_id", userId).eq("status", "completed").not("score", "is", null),
         supabase.from("manual_grades").select("score, max_score").eq("student_id", userId),
+        supabase.from("attendance").select("id").eq("student_id", userId).eq("status", "hadir"),
         supabase.from("attendance").select("id").eq("student_id", userId).eq("status", "present"),
         supabase.from("attendance").select("id").eq("student_id", userId),
       ]);
