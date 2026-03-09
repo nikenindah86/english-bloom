@@ -11,7 +11,7 @@ import { CalendarCheck, Loader2, Save, BookOpen } from "lucide-react";
 type StudentRow = {
   id: string;
   full_name: string;
-  status: "present" | "absent" | "late";
+  status: "hadir" | "izin" | "sakit" | "alpha";
 };
 
 type JournalEntry = {
@@ -23,12 +23,20 @@ type JournalEntry = {
 };
 
 const statusColors: Record<string, string> = {
-  present: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  absent: "bg-red-100 text-red-700 border-red-300",
-  late: "bg-amber-100 text-amber-700 border-amber-300",
+  hadir: "bg-emerald-100 text-emerald-700 border-emerald-300",
+  izin: "bg-blue-100 text-blue-700 border-blue-300",
+  sakit: "bg-amber-100 text-amber-700 border-amber-300",
+  alpha: "bg-red-100 text-red-700 border-red-300",
 };
 
-const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const statusLabels: Record<string, string> = {
+  hadir: "Hadir",
+  izin: "Izin",
+  sakit: "Sakit",
+  alpha: "Alpha",
+};
+
+const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
 const AdminAttendance = () => {
   const { toast } = useToast();
