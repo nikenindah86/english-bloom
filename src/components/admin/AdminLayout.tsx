@@ -107,10 +107,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="hidden md:flex" />
                 <div className="flex md:hidden items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="font-display font-bold text-sm">Teacher</span>
+                  <img src={logo} alt="NICE" className="w-7 h-7 rounded-lg object-contain" />
+                  <span className="font-display font-bold text-sm">NICE</span>
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
