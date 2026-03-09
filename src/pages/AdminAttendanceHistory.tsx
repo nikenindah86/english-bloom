@@ -111,16 +111,22 @@ const AdminAttendanceHistory = () => {
   const selectedClassName = classes?.find(c => c.id === selectedClassId)?.class_name ?? "Kelas";
 
   const exportAttendance = () => {
-    const headers = ["Nama Siswa", ...uniqueDates.map(d => format(parseISO(d), "dd/MM/yyyy")), "Hadir", "Absen", "Terlambat", "%"];
+    const headers = ["Nama Siswa", ...uniqueDates.map(d => format(parseISO(d), "dd/MM/yyyy")), "H", "I", "S", "A", "%"];
     const csvRows = rows.map(r => [
       r.name,
       ...uniqueDates.map(d => {
         const st = r.record[d];
-        return st === "present" ? "H" : st === "absent" ? "A" : st === "late" ? "L" : "";
+        // Support both old and new statuses
+        if (st === "hadir" || st === "present") return "H";
+        if (st === "izin") return "I";
+        if (st === "sakit" || st === "late") return "S";
+        if (st === "alpha" || st === "absent") return "A";
+        return "";
       }),
-      String(r.present),
-      String(r.absent),
-      String(r.late),
+      String(r.hadir),
+      String(r.izin),
+      String(r.sakit),
+      String(r.alpha),
       r.rate !== null ? `${r.rate.toFixed(0)}%` : "",
     ]);
     downloadCSV(headers, csvRows, `Kehadiran_${selectedClassName}_${dateFromStr}_${dateToStr}.csv`);
