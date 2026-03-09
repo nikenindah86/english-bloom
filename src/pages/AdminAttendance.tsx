@@ -79,7 +79,7 @@ const AdminAttendance = () => {
 
       const rows: StudentRow[] = (profiles || []).map((p) => ({
         id: p.id,
-        full_name: p.full_name || "Unnamed Student",
+        full_name: p.full_name || "Siswa Tanpa Nama",
         status: (attendanceMap[p.id] as StudentRow["status"]) || "present",
       }));
 
