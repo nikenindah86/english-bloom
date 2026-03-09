@@ -1,31 +1,46 @@
 
-Masalah yang terlihat dari codebase dan screenshot:
 
-1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
-   - `netlify.toml`
-   - `public/_redirects`
-2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
+## Plan: Indonesian Attendance Statuses + Rekap Bulanan
 
-Rencana implementasi:
+### 1. Change Attendance Statuses to Indonesian (4 statuses)
 
-1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
-2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
-3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
-4. Validasi routing React tetap benar dan tidak ubah struktur route existing
-5. Setelah deploy, verifikasi:
-   - buka `/` (cek tombol sudah besar di mobile)
-   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
+Current: `present`, `absent`, `late`
+New: `hadir`, `izin`, `sakit`, `alpha`
 
-File yang akan diubah:
+**Files to update:**
 
-| File | Perubahan |
-|---|---|
-| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
-| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
-| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
+| File | Changes |
+|------|---------|
+| `src/pages/AdminAttendance.tsx` | Change `StudentRow.status` type to 4 Indonesian statuses. Update `statusColors` map. Update buttons to show Hadir/Izin/Sakit/Alpha. Default status → `"hadir"`. Update day names to Indonesian. |
+| `src/pages/AdminAttendanceHistory.tsx` | Update `statusIcon` for 4 statuses (✓=Hadir, I=Izin, S=Sakit, A=Alpha). Update summary columns (H/I/S/A). Update CSV export with new status codes. Update attendance rate calculation (hadir counts as present). |
+| `src/pages/AdminGradeOverview.tsx` | Change `status === "present"` → `status === "hadir"` on line 142. |
+| `src/components/student/PassingGradeCard.tsx` | Change `.eq("status", "present")` → `.eq("status", "hadir")` on line 87. |
 
-Detail teknis:
+### 2. Rekap Daftar Hadir Bulanan (already exists, enhance)
 
-- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
-- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
-- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
+The `AdminAttendanceHistory.tsx` page already has an Excel-like attendance table with CSV export. Changes needed:
+- Update status labels/icons for 4 Indonesian statuses
+- Add Izin (I) and Sakit (S) summary columns alongside Hadir (H) and Alpha (A)
+- CSV export updated accordingly
+
+### 3. Rekap Jurnal Mengajar (already exists)
+
+Already present in `AdminAttendanceHistory.tsx` with Excel-like table and CSV download. No structural changes needed beyond what's already there.
+
+### Status Color Map
+
+```text
+hadir  → green (emerald)
+izin   → blue
+sakit  → amber/yellow
+alpha  → red
+```
+
+### No Database Migration Needed
+
+The `attendance.status` column is `text` type — no schema change required. Just updating the stored values going forward.
+
+### Important Note
+
+Existing data in the database still uses `present/absent/late`. The history view should handle both old and new values gracefully during the transition period.
+
