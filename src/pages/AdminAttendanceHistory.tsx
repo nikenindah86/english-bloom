@@ -144,9 +144,11 @@ const AdminAttendanceHistory = () => {
   };
 
   const statusIcon = (status: string | undefined) => {
-    if (status === "present") return <span className="text-green-600 dark:text-green-400 font-bold">✓</span>;
-    if (status === "absent") return <span className="text-destructive font-bold">A</span>;
-    if (status === "late") return <span className="text-amber-500 font-bold">L</span>;
+    // Support both old and new statuses
+    if (status === "hadir" || status === "present") return <span className="text-green-600 dark:text-green-400 font-bold">H</span>;
+    if (status === "izin") return <span className="text-blue-600 dark:text-blue-400 font-bold">I</span>;
+    if (status === "sakit" || status === "late") return <span className="text-amber-500 font-bold">S</span>;
+    if (status === "alpha" || status === "absent") return <span className="text-destructive font-bold">A</span>;
     return <span className="text-muted-foreground">—</span>;
   };
 
