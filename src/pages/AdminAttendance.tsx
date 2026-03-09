@@ -156,7 +156,7 @@ const AdminAttendance = () => {
     fetchJournal();
   }, [selectedClass, date]);
 
-  const setStatus = (studentId: string, status: "present" | "absent" | "late") => {
+  const setStatus = (studentId: string, status: "hadir" | "izin" | "sakit" | "alpha") => {
     setStudents((prev) =>
       prev.map((s) => (s.id === studentId ? { ...s, status } : s))
     );
