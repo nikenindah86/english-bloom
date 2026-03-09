@@ -4,9 +4,10 @@ import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
-  BookOpen, LogOut, Home, Users, FileText, ClipboardList, Megaphone,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties,
+  LogOut, Home, Users, FileText, ClipboardList, Megaphone,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties, BookOpen,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -79,11 +80,9 @@ const AdminSidebar = () => {
     <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarContent className="pt-4">
         <div className="px-4 pb-2 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
+          <img src={logo} alt="NICE" className="w-8 h-8 rounded-xl object-contain shrink-0" />
           {!collapsed && (
-            <span className="font-display font-bold text-sm truncate">Teacher Panel</span>
+            <span className="font-display font-bold text-sm truncate">NICE</span>
           )}
         </div>
         {renderGroup("Main", mainItems)}
@@ -108,10 +107,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="hidden md:flex" />
                 <div className="flex md:hidden items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="font-display font-bold text-sm">Teacher</span>
+                  <img src={logo} alt="NICE" className="w-7 h-7 rounded-lg object-contain" />
+                  <span className="font-display font-bold text-sm">NICE</span>
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-xs text-muted-foreground">{user?.email}</p>

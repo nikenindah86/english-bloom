@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +27,6 @@ const Login = () => {
       return;
     }
 
-    // Fetch role and redirect
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -40,23 +40,18 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      {/* Decorative background blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-accent/40 blur-3xl" />
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-lavender/30 blur-3xl" />
       </div>
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
-        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <BookOpen className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold font-display text-foreground">Welcome Back</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your learning account</p>
+          <img src={logo} alt="NICE Logo" className="w-20 h-20 mx-auto mb-4 rounded-2xl object-contain" />
+          <h1 className="text-3xl font-bold font-display text-foreground">NICE</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Niken's Interactive Classroom for English</p>
         </div>
 
-        {/* Card */}
         <div className="glass-strong rounded-2xl p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">

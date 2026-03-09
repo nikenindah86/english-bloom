@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -52,11 +52,9 @@ const Register = () => {
 
       <div className="w-full max-w-md animate-fade-in relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <BookOpen className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold font-display text-foreground">Create Account</h1>
-          <p className="text-muted-foreground mt-2">Join our English learning community</p>
+          <img src={logo} alt="NICE Logo" className="w-20 h-20 mx-auto mb-4 rounded-2xl object-contain" />
+          <h1 className="text-3xl font-bold font-display text-foreground">NICE</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Niken's Interactive Classroom for English</p>
         </div>
 
         <div className="glass-strong rounded-2xl p-8">
@@ -108,7 +106,6 @@ const Register = () => {
                 />
               </div>
             </div>
-
 
             <Button
               type="submit"

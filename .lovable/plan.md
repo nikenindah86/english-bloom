@@ -1,27 +1,31 @@
 
+Masalah yang terlihat dari codebase dan screenshot:
 
-## Plan: Add NICE Branding + Logo + Favicon
+1. Route deploy Netlify masih 404 untuk URL langsung seperti `/student` karena aplikasi pakai `BrowserRouter`, tapi saat ini di repo **tidak ada**:
+   - `netlify.toml`
+   - `public/_redirects`
+2. Perubahan tombol mobile yang sempat terlihat di preview belum ada di source saat ini (`src/pages/Index.tsx` masih versi lama), jadi wajar jika domain deploy tidak ikut berubah.
 
-### Changes
+Rencana implementasi:
 
-**1. Copy uploaded image to project**
-- Copy `user-uploads://favicon.png` to `public/favicon.png` (for favicon)
-- Copy `user-uploads://favicon.png` to `src/assets/logo.png` (for React components)
+1. Tambahkan konfigurasi rewrite SPA di root project lewat `netlify.toml`
+2. Tambahkan fallback kedua di `public/_redirects` agar file ikut tercopy ke `dist`
+3. Re-apply perubahan UI tombol mobile di landing page (`src/pages/Index.tsx`) supaya source of truth sama dengan preview
+4. Validasi routing React tetap benar dan tidak ubah struktur route existing
+5. Setelah deploy, verifikasi:
+   - buka `/` (cek tombol sudah besar di mobile)
+   - buka `/student` langsung dari address bar (harus load app, bukan 404 Netlify)
 
-**2. `index.html`** — Update title to "NICE - Niken's Interactive Classroom for English", add favicon link, update meta tags
+File yang akan diubah:
 
-**3. `src/pages/Login.tsx`** — Replace BookOpen icon with the logo image, change heading to "NICE" with subtitle "Niken's Interactive Classroom for English"
+| File | Perubahan |
+|---|---|
+| `netlify.toml` (new) | Build config + SPA redirect `/* -> /index.html (200)` |
+| `public/_redirects` (new) | Fallback redirect rule `/* /index.html 200` |
+| `src/pages/Index.tsx` | Tombol Sign In/Create Account: lebih tinggi, lebih besar, stacked di mobile |
 
-**4. `src/pages/Register.tsx`** — Same branding update as Login page
+Detail teknis:
 
-**5. `src/components/admin/AdminLayout.tsx`** — Replace BookOpen icon in sidebar header and mobile header with the logo image. Update label from "Teacher Panel" to "NICE"
-
-| File | Change |
-|------|--------|
-| `public/favicon.png` | Copy uploaded image |
-| `src/assets/logo.png` | Copy uploaded image |
-| `index.html` | Title + favicon + meta |
-| `src/pages/Login.tsx` | Logo image + app name |
-| `src/pages/Register.tsx` | Logo image + app name |
-| `src/components/admin/AdminLayout.tsx` | Logo in sidebar + header |
-
+- `src/App.tsx` sudah menggunakan `BrowserRouter`, jadi server harus selalu serve `index.html` untuk deep link.
+- Route yang valid sekarang untuk student adalah `/student`, `/student/materials`, `/student/quizzes`, `/student/quiz/:id`, `/student/grades`.
+- Jika nanti akses `/student/profile`, app akan masuk ke route `*` (NotFound) kecuali kita tambah route khusus profile.
