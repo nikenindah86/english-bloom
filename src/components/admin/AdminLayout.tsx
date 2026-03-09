@@ -80,11 +80,9 @@ const AdminSidebar = () => {
     <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarContent className="pt-4">
         <div className="px-4 pb-2 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <BookOpen className="w-4 h-4 text-primary" />
-          </div>
+          <img src={logo} alt="NICE" className="w-8 h-8 rounded-xl object-contain shrink-0" />
           {!collapsed && (
-            <span className="font-display font-bold text-sm truncate">Teacher Panel</span>
+            <span className="font-display font-bold text-sm truncate">NICE</span>
           )}
         </div>
         {renderGroup("Main", mainItems)}
