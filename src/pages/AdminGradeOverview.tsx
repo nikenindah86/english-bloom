@@ -137,9 +137,9 @@ const AdminGradeOverview = () => {
       const manualValues = Object.values(manualScores).filter((v): v is number => v !== null);
       const manualAvg = manualValues.length ? manualValues.reduce((a, b) => a + b, 0) / manualValues.length : null;
 
-      // Attendance
+      // Attendance - support both old (present) and new (hadir) statuses
       const studentAtt = attendance?.filter(a => a.student_id === student.id) ?? [];
-      const presentCount = studentAtt.filter(a => a.status === "present").length;
+      const presentCount = studentAtt.filter(a => a.status === "hadir" || a.status === "present").length;
       const attRate = studentAtt.length ? (presentCount / studentAtt.length) * 100 : null;
 
       // Weighted total

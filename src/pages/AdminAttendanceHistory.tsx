@@ -93,32 +93,40 @@ const AdminAttendanceHistory = () => {
     if (!students) return [];
     return students.map(s => {
       const record = attMap[s.id] || {};
-      let present = 0, absent = 0, late = 0;
+      let hadir = 0, izin = 0, sakit = 0, alpha = 0;
       uniqueDates.forEach(d => {
         const st = record[d];
-        if (st === "present") present++;
-        else if (st === "absent") absent++;
-        else if (st === "late") late++;
+        // Support both old (present/absent/late) and new (hadir/izin/sakit/alpha) statuses
+        if (st === "hadir" || st === "present") hadir++;
+        else if (st === "izin") izin++;
+        else if (st === "sakit" || st === "late") sakit++;
+        else if (st === "alpha" || st === "absent") alpha++;
       });
-      const total = present + absent + late;
-      const rate = total > 0 ? (present / total) * 100 : null;
-      return { id: s.id, name: s.full_name || "—", record, present, absent, late, total, rate };
+      const total = hadir + izin + sakit + alpha;
+      const rate = total > 0 ? (hadir / total) * 100 : null;
+      return { id: s.id, name: s.full_name || "—", record, hadir, izin, sakit, alpha, total, rate };
     });
   }, [students, attMap, uniqueDates]);
 
   const selectedClassName = classes?.find(c => c.id === selectedClassId)?.class_name ?? "Kelas";
 
   const exportAttendance = () => {
-    const headers = ["Nama Siswa", ...uniqueDates.map(d => format(parseISO(d), "dd/MM/yyyy")), "Hadir", "Absen", "Terlambat", "%"];
+    const headers = ["Nama Siswa", ...uniqueDates.map(d => format(parseISO(d), "dd/MM/yyyy")), "H", "I", "S", "A", "%"];
     const csvRows = rows.map(r => [
       r.name,
       ...uniqueDates.map(d => {
         const st = r.record[d];
-        return st === "present" ? "H" : st === "absent" ? "A" : st === "late" ? "L" : "";
+        // Support both old and new statuses
+        if (st === "hadir" || st === "present") return "H";
+        if (st === "izin") return "I";
+        if (st === "sakit" || st === "late") return "S";
+        if (st === "alpha" || st === "absent") return "A";
+        return "";
       }),
-      String(r.present),
-      String(r.absent),
-      String(r.late),
+      String(r.hadir),
+      String(r.izin),
+      String(r.sakit),
+      String(r.alpha),
       r.rate !== null ? `${r.rate.toFixed(0)}%` : "",
     ]);
     downloadCSV(headers, csvRows, `Kehadiran_${selectedClassName}_${dateFromStr}_${dateToStr}.csv`);
@@ -136,9 +144,11 @@ const AdminAttendanceHistory = () => {
   };
 
   const statusIcon = (status: string | undefined) => {
-    if (status === "present") return <span className="text-green-600 dark:text-green-400 font-bold">✓</span>;
-    if (status === "absent") return <span className="text-destructive font-bold">A</span>;
-    if (status === "late") return <span className="text-amber-500 font-bold">L</span>;
+    // Support both old and new statuses
+    if (status === "hadir" || status === "present") return <span className="text-green-600 dark:text-green-400 font-bold">H</span>;
+    if (status === "izin") return <span className="text-blue-600 dark:text-blue-400 font-bold">I</span>;
+    if (status === "sakit" || status === "late") return <span className="text-amber-500 font-bold">S</span>;
+    if (status === "alpha" || status === "absent") return <span className="text-destructive font-bold">A</span>;
     return <span className="text-muted-foreground">—</span>;
   };
 
@@ -216,9 +226,10 @@ const AdminAttendanceHistory = () => {
                             {format(parseISO(d), "dd/MM")}
                           </TableHead>
                         ))}
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">H</TableHead>
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">A</TableHead>
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">L</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-green-600 dark:text-green-400">H</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-blue-600 dark:text-blue-400">I</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-amber-500">S</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-destructive">A</TableHead>
                         <TableHead className="text-center min-w-[50px] text-[10px] font-bold">%</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -233,9 +244,10 @@ const AdminAttendanceHistory = () => {
                           {uniqueDates.map(d => (
                             <TableCell key={d} className="text-center px-1">{statusIcon(row.record[d])}</TableCell>
                           ))}
-                          <TableCell className="text-center text-xs tabular-nums text-green-600 dark:text-green-400 font-semibold">{row.present}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums text-destructive font-semibold">{row.absent}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums text-amber-500 font-semibold">{row.late}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-green-600 dark:text-green-400 font-semibold">{row.hadir}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">{row.izin}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-amber-500 font-semibold">{row.sakit}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-destructive font-semibold">{row.alpha}</TableCell>
                           <TableCell className="text-center text-xs tabular-nums font-bold">{row.rate !== null ? `${row.rate.toFixed(0)}%` : "—"}</TableCell>
                         </TableRow>
                       ))}
@@ -244,12 +256,13 @@ const AdminAttendanceHistory = () => {
                         <TableRow className="border-t-2 border-primary/30 bg-muted/40 font-semibold">
                           <TableCell className="sticky left-0 z-10 bg-muted/60 text-[10px] uppercase tracking-wider border-r">Total</TableCell>
                           {uniqueDates.map(d => {
-                            const p = rows.filter(r => r.record[d] === "present").length;
-                            return <TableCell key={d} className="text-center text-[10px] tabular-nums">{p}/{rows.length}</TableCell>;
+                            const h = rows.filter(r => r.record[d] === "hadir" || r.record[d] === "present").length;
+                            return <TableCell key={d} className="text-center text-[10px] tabular-nums">{h}/{rows.length}</TableCell>;
                           })}
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.present, 0)}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.absent, 0)}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.late, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.hadir, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.izin, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.sakit, 0)}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums">{rows.reduce((a, r) => a + r.alpha, 0)}</TableCell>
                           <TableCell className="text-center text-xs tabular-nums font-bold">
                             {rows.length ? `${(rows.reduce((a, r) => a + (r.rate ?? 0), 0) / rows.length).toFixed(0)}%` : "—"}
                           </TableCell>

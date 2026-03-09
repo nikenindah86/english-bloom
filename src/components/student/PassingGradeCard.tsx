@@ -79,11 +79,12 @@ const PassingGradeCard = ({ userId, classId }: Props) => {
       setConfig(cfg);
       setPassingGrade(Number(cfg.passing_grade));
 
-      // Fetch all data in parallel
-      const [quizRes, assessRes, manualRes, attRes, attTotalRes] = await Promise.all([
+      // Fetch all data in parallel - support both old (present) and new (hadir) statuses
+      const [quizRes, assessRes, manualRes, attHadirRes, attPresentRes, attTotalRes] = await Promise.all([
         supabase.from("quiz_submissions").select("score").eq("student_id", userId).eq("status", "graded").not("score", "is", null),
         supabase.from("assessment_submissions").select("score").eq("student_id", userId).eq("status", "completed").not("score", "is", null),
         supabase.from("manual_grades").select("score, max_score").eq("student_id", userId),
+        supabase.from("attendance").select("id").eq("student_id", userId).eq("status", "hadir"),
         supabase.from("attendance").select("id").eq("student_id", userId).eq("status", "present"),
         supabase.from("attendance").select("id").eq("student_id", userId),
       ]);
@@ -100,8 +101,8 @@ const PassingGradeCard = ({ userId, classId }: Props) => {
       const manualScores = (manualRes.data || []).map(g => (Number(g.score) / Number(g.max_score)) * 100);
       const manualAvg = manualScores.length > 0 ? manualScores.reduce((a, b) => a + b, 0) / manualScores.length : 0;
 
-      // Attendance rate (0-100)
-      const presentCount = (attRes.data || []).length;
+      // Attendance rate (0-100) - combine hadir and present counts
+      const presentCount = (attHadirRes.data || []).length + (attPresentRes.data || []).length;
       const totalCount = (attTotalRes.data || []).length;
       const attendanceRate = totalCount > 0 ? (presentCount / totalCount) * 100 : 0;
 
