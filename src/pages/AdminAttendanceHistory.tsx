@@ -226,9 +226,10 @@ const AdminAttendanceHistory = () => {
                             {format(parseISO(d), "dd/MM")}
                           </TableHead>
                         ))}
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">H</TableHead>
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">A</TableHead>
-                        <TableHead className="text-center min-w-[40px] text-[10px] font-bold">L</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-green-600 dark:text-green-400">H</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-blue-600 dark:text-blue-400">I</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-amber-500">S</TableHead>
+                        <TableHead className="text-center min-w-[32px] text-[10px] font-bold text-destructive">A</TableHead>
                         <TableHead className="text-center min-w-[50px] text-[10px] font-bold">%</TableHead>
                       </TableRow>
                     </TableHeader>
