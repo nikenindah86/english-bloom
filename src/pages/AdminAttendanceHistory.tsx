@@ -244,9 +244,10 @@ const AdminAttendanceHistory = () => {
                           {uniqueDates.map(d => (
                             <TableCell key={d} className="text-center px-1">{statusIcon(row.record[d])}</TableCell>
                           ))}
-                          <TableCell className="text-center text-xs tabular-nums text-green-600 dark:text-green-400 font-semibold">{row.present}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums text-destructive font-semibold">{row.absent}</TableCell>
-                          <TableCell className="text-center text-xs tabular-nums text-amber-500 font-semibold">{row.late}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-green-600 dark:text-green-400 font-semibold">{row.hadir}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">{row.izin}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-amber-500 font-semibold">{row.sakit}</TableCell>
+                          <TableCell className="text-center text-xs tabular-nums text-destructive font-semibold">{row.alpha}</TableCell>
                           <TableCell className="text-center text-xs tabular-nums font-bold">{row.rate !== null ? `${row.rate.toFixed(0)}%` : "—"}</TableCell>
                         </TableRow>
                       ))}
