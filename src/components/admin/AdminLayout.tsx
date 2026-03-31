@@ -5,7 +5,7 @@ import NotificationBell from "@/components/NotificationBell";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import {
   LogOut, Home, Users, FileText, ClipboardList, Megaphone,
-  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties, BookOpen,
+  CheckSquare, CalendarCheck, GraduationCap, PenLine, FileCheck, CalendarDays, StickyNote, NotebookPen, ShoppingBag, Target, TableProperties, BookOpen, ClipboardPenLine,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import {
