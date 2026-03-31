@@ -32,7 +32,7 @@ const adminMoreItems: NavItem[] = [
   { label: "Assessments", icon: FileCheck, path: "/admin/assessments" },
   { label: "Classes", icon: GraduationCap, path: "/admin/classes" },
   { label: "Materials", icon: FileText, path: "/admin/materials" },
-  { label: "Assignments", icon: FileCheck, path: "/admin/assignments" },
+  { label: "Assignments", icon: ClipboardPenLine, path: "/admin/assignments" },
   { label: "Schedule", icon: CalendarDays, path: "/admin/schedule" },
   { label: "Manual Grades", icon: PenLine, path: "/admin/manual-grades" },
   { label: "Attendance", icon: CalendarCheck, path: "/admin/attendance" },

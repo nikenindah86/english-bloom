@@ -25,7 +25,7 @@ const academicItems = [
   { title: "Materials", url: "/admin/materials", icon: FileText },
   { title: "Quizzes", url: "/admin/quizzes", icon: ClipboardList },
   { title: "Assessments", url: "/admin/assessments", icon: FileCheck },
-  { title: "Assignments", url: "/admin/assignments", icon: FileCheck },
+  { title: "Assignments", url: "/admin/assignments", icon: ClipboardPenLine },
   { title: "Lesson Plans", url: "/admin/lesson-plans", icon: NotebookPen },
   { title: "Schedule", url: "/admin/schedule", icon: CalendarDays },
 ];
