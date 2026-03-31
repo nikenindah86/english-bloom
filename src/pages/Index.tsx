@@ -15,10 +15,12 @@ const Index = () => {
 
         <div className="space-y-2">
           <h1 className="text-3xl font-bold font-display text-foreground">
-            English Teacher LMS
+            NICE
           </h1>
           <p className="text-muted-foreground text-base">
-            Your elegant space for learning materials, quizzes, and student progress.
+            Niken's Interactive Classroom for English
+          </p>
+        </div>
           </p>
         </div>
 
