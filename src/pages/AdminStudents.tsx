@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Users, Search, Pencil, Eye, MapPin, Phone, Calendar, User, Heart, Download } from "lucide-react";
+import { Users, Search, Pencil, Eye, MapPin, Phone, Calendar, User, Heart, Download, Trash2 } from "lucide-react";
 import { downloadCSV } from "@/lib/csvExport";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,6 +41,8 @@ const AdminStudents = () => {
   const [editStudent, setEditStudent] = useState<StudentProfile | null>(null);
   const [editName, setEditName] = useState("");
   const [viewStudent, setViewStudent] = useState<StudentProfile | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<string[] | null>(null);
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["admin-students"],
@@ -72,7 +76,6 @@ const AdminStudents = () => {
     },
   });
 
-  // Derive unique classes for filter
   const classOptions = useMemo(() => {
     const map = new Map<string, string>();
     students.forEach(s => {
@@ -81,7 +84,6 @@ const AdminStudents = () => {
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [students]);
 
-  // Filter chain: search → class → gender
   const filtered = useMemo(() => {
     let result = students;
     if (search) result = result.filter(s => (s.full_name || "").toLowerCase().includes(search.toLowerCase()));
@@ -90,15 +92,31 @@ const AdminStudents = () => {
     return result;
   }, [students, search, classFilter, genderFilter]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  // Reset page when filters change
   const handleSearch = (v: string) => { setSearch(v); setPage(1); };
   const handleClassFilter = (v: string) => { setClassFilter(v); setPage(1); };
   const handleGenderFilter = (v: string) => { setGenderFilter(v); setPage(1); };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const pageIds = paginated.map(s => s.id);
+    const allSelected = pageIds.every(id => selectedIds.has(id));
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      pageIds.forEach(id => allSelected ? next.delete(id) : next.add(id));
+      return next;
+    });
+  };
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, full_name }: { id: string; full_name: string }) => {
@@ -111,6 +129,29 @@ const AdminStudents = () => {
       toast.success("Student updated!");
     },
     onError: () => toast.error("Failed to update student"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { data, error } = await supabase.functions.invoke("delete-students", {
+        body: { student_ids: ids },
+      });
+      if (error) throw error;
+      if (data?.errors?.length) {
+        console.warn("Partial delete errors:", data.errors);
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-students"] });
+      setSelectedIds(new Set());
+      setDeleteTarget(null);
+      toast.success(`${data.deleted} student(s) deleted`);
+    },
+    onError: () => {
+      toast.error("Failed to delete student(s)");
+      setDeleteTarget(null);
+    },
   });
 
   const exportStudents = () => {
@@ -132,6 +173,13 @@ const AdminStudents = () => {
     setEditStudent(student);
     setEditName(student.full_name || "");
   };
+
+  const deleteTargetNames = useMemo(() => {
+    if (!deleteTarget) return [];
+    return deleteTarget.map(id => students.find(s => s.id === id)?.full_name || "Unnamed");
+  }, [deleteTarget, students]);
+
+  const allPageSelected = paginated.length > 0 && paginated.every(s => selectedIds.has(s.id));
 
   const InfoRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string | null }) => (
     <div className="flex items-start gap-3 py-2">
@@ -185,6 +233,21 @@ const AdminStudents = () => {
           )}
         </div>
 
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2">
+            <span className="text-sm font-medium">{selectedIds.size} selected</span>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl gap-1.5 text-xs ml-auto"
+              onClick={() => setDeleteTarget(Array.from(selectedIds))}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete Selected
+            </Button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="glass rounded-2xl p-8 text-center">
             <p className="text-muted-foreground text-sm">Loading students...</p>
@@ -198,10 +261,26 @@ const AdminStudents = () => {
           </div>
         ) : (
           <>
-            <p className="text-xs text-muted-foreground">{filtered.length} student{filtered.length !== 1 ? "s" : ""}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={allPageSelected}
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all on this page"
+                />
+                <span className="text-xs text-muted-foreground">Select all</span>
+              </div>
+              <p className="text-xs text-muted-foreground ml-auto">{filtered.length} student{filtered.length !== 1 ? "s" : ""}</p>
+            </div>
             <div className="space-y-3">
               {paginated.map((student) => (
                 <div key={student.id} className="glass rounded-2xl p-4 flex items-center gap-4">
+                  <Checkbox
+                    checked={selectedIds.has(student.id)}
+                    onCheckedChange={() => toggleSelect(student.id)}
+                    aria-label={`Select ${student.full_name}`}
+                    className="shrink-0"
+                  />
                   <Avatar className="w-10 h-10 shrink-0">
                     {student.avatar_url && <AvatarImage src={student.avatar_url} alt={student.full_name || ""} />}
                     <AvatarFallback className="bg-accent text-accent-foreground text-sm font-bold">
@@ -221,12 +300,19 @@ const AdminStudents = () => {
                     <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => openEdit(student)}>
                       <Pencil className="w-4 h-4" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setDeleteTarget([student.id])}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <Pagination>
                 <PaginationContent>
@@ -322,6 +408,32 @@ const AdminStudents = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.length === 1 ? "Student" : `${deleteTarget?.length} Students`}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {deleteTarget?.length === 1 ? (
+                <strong>{deleteTargetNames[0]}</strong>
+              ) : (
+                <span><strong>{deleteTarget?.length}</strong> students</span>
+              )} and all their related data (grades, submissions, attendance, etc.). This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
