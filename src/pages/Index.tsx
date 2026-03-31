@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/logo.png";
 
 const Index = () => {
   return (
@@ -11,9 +11,7 @@ const Index = () => {
       <div className="absolute top-1/2 left-1/3 w-[250px] h-[250px] rounded-full bg-primary/10 blur-3xl" />
 
       <div className="relative z-10 glass-strong rounded-2xl px-10 py-14 max-w-md w-full text-center flex flex-col items-center gap-6">
-        <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-          <BookOpen className="h-8 w-8 text-primary" />
-        </div>
+        <img src={logo} alt="NICE Logo" className="h-20 w-20 rounded-2xl object-contain" />
 
         <div className="space-y-2">
           <h1 className="text-3xl font-bold font-display text-foreground">
