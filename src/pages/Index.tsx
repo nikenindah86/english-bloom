@@ -21,8 +21,6 @@ const Index = () => {
             Niken's Interactive Classroom for English
           </p>
         </div>
-          </p>
-        </div>
 
         <div className="flex flex-col gap-4 w-full mt-2">
           <Button asChild className="h-14 text-lg rounded-xl" size="lg">
