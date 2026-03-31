@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Home, FileText, ClipboardList, Star, User, Users, CheckSquare, MoreHorizontal, BookOpen } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, PenLine, CalendarCheck, FileCheck, CalendarDays, StickyNote, Megaphone, NotebookPen, ShoppingBag } from "lucide-react";
+import { GraduationCap, PenLine, CalendarCheck, FileCheck, CalendarDays, StickyNote, Megaphone, NotebookPen, ShoppingBag, ClipboardPenLine } from "lucide-react";
 import { useState } from "react";
 
 type NavItem = {
